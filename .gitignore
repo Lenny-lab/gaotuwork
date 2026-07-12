@@ -16,14 +16,31 @@ tmp/
 Thumbs.db
 
 # 日志和运行产物
+*.log
 server.*.log
+server.*.err
+server.*.pid
 output/*.pid
 output/*.log
+output/*.err
 output/*.json
 output/*.html
 output/**/*.log
 output/**/*.html
+output/**/*.pdf
+output/pdf/
 !output/.gitkeep
+
+# LaTeX / 论文编译产物
+thesis/*.aux
+thesis/*.log
+thesis/*.out
+thesis/*.toc
+thesis/*.lof
+thesis/*.lot
+thesis/build*.log
+thesis/figures_svg.zip
+thesis/main.pdf
 
 # 凭据和本地配置
 .env
