@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ClassMind 排课表 · 飞书多维表格</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/features.css">
+  <style>
+    body { margin: 0; padding: 0; height: 100vh; overflow: hidden; }
+    .bitable-frame {
+      width: 100vw;
+      height: calc(100vh - 56px);  /* 减去顶部 nav 高度 */
+      border: 0;
+      display: block;
+    }
+    .nav-bar {
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      background: linear-gradient(135deg, #1f4eff 0%, #5b8def 100%);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .nav-bar h1 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .nav-bar a {
+      color: #fff;
+      text-decoration: none;
+      font-size: 0.9rem;
+      opacity: 0.92;
+      margin-left: 18px;
+    }
+    .nav-bar a:hover { opacity: 1; }
+    .fallback {
+      max-width: 480px;
+      margin: 80px auto;
+      padding: 24px;
+      text-align: center;
+      color: #555;
+    }
+    .fallback a {
+      color: #1f4eff;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .fallback a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body data-page="bitable">
+  <div class="nav-bar">
+    <h1>📊 ClassMind 排课表 · 飞书多维表格</h1>
+    <div>
+      <a href="/">← 返回驾驶舱</a>
+      <a id="open-external" href="#" target="_blank" rel="noopener">↗ 在飞书打开</a>
+    </div>
+  </div>
+  <!--
+    iframe src 由部署后端写入
+    默认 PLACEHOLDER_URL,实际使用前在飞书后台把
+    BASE_TOKEN 和 TABLE_ID 替换进来
+  -->
+  <iframe
+    id="bitable-frame"
+    class="bitable-frame"
+    src="PLACEHOLDER_URL"
+    allow="fullscreen; clipboard-read; clipboard-write"
+    referrerpolicy="no-referrer"
+  ></iframe>
+
+  <noscript>
+    <div class="fallback">
+      <p>需要 JavaScript 才能加载飞书多维表格。</p>
+      <a href="#" id="open-external-noscript">在飞书中直接打开 →</a>
+    </div>
+  </noscript>
+
+  <script>
+    // 把锚链接同步指向 iframe src,这样右上角"在飞书打开"永远有效
+    (function () {
+      var frame = document.getElementById('bitable-frame');
+      var ext = document.getElementById('open-external');
+      if (frame && ext) ext.href = frame.src;
+    })();
+  </script>
+</body>
+</html>
