@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: classmind-feishu
+    runtime: python
+    plan: free
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn -w 2 -k gthread -b 0.0.0.0:$PORT app:app --timeout 120
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: APP_ID
+        sync: false
+      - key: APP_SECRET
+        sync: false
+      - key: FEISHU_HOST
+        value: https://open.feishu.cn
+      - key: FEISHU_ENCRYPT_KEY
+        sync: false
+      - key: FEISHU_VERIFICATION_TOKEN
+        sync: false
+      - key: BITABLE_APP_TOKEN
+        sync: false
+      - key: BITABLE_TABLE_ID
+        sync: false

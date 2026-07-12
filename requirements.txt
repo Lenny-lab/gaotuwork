@@ -1,2 +1,15 @@
+# 排课引擎
 ortools==9.15.6755
 
+# Web 框架
+Flask==3.0.3
+gunicorn==22.0.0
+
+# 环境变量
+python-dotenv==1.0.1
+
+# 飞书 SDK 替代(直接用 requests + 飞书 openAPI)
+requests==2.32.3
+
+# 飞书事件加密(AES-128-CBC)
+cryptography==42.0.8
