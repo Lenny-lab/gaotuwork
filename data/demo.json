@@ -1,0 +1,47 @@
+{
+  "time_slots": [
+    {"id":"MON_0800","day":"周一","period":"08:00-09:30","order":1},
+    {"id":"MON_1000","day":"周一","period":"10:00-11:30","order":2},
+    {"id":"MON_1330","day":"周一","period":"13:30-15:00","order":3},
+    {"id":"MON_1530","day":"周一","period":"15:30-17:00","order":4},
+    {"id":"TUE_0800","day":"周二","period":"08:00-09:30","order":5},
+    {"id":"TUE_1000","day":"周二","period":"10:00-11:30","order":6},
+    {"id":"TUE_1330","day":"周二","period":"13:30-15:00","order":7},
+    {"id":"TUE_1530","day":"周二","period":"15:30-17:00","order":8},
+    {"id":"WED_0800","day":"周三","period":"08:00-09:30","order":9},
+    {"id":"WED_1000","day":"周三","period":"10:00-11:30","order":10},
+    {"id":"WED_1330","day":"周三","period":"13:30-15:00","order":11},
+    {"id":"WED_1530","day":"周三","period":"15:30-17:00","order":12},
+    {"id":"THU_0800","day":"周四","period":"08:00-09:30","order":13},
+    {"id":"THU_1000","day":"周四","period":"10:00-11:30","order":14},
+    {"id":"THU_1330","day":"周四","period":"13:30-15:00","order":15},
+    {"id":"THU_1530","day":"周四","period":"15:30-17:00","order":16},
+    {"id":"FRI_0800","day":"周五","period":"08:00-09:30","order":17},
+    {"id":"FRI_1000","day":"周五","period":"10:00-11:30","order":18},
+    {"id":"FRI_1330","day":"周五","period":"13:30-15:00","order":19},
+    {"id":"FRI_1530","day":"周五","period":"15:30-17:00","order":20}
+  ],
+  "teachers": [
+    {"id":"T01","name":"张老师","qualifications":["数学"],"unavailable":["WED_1000"],"preferred_slots":["MON_0800","TUE_0800","THU_1000"]},
+    {"id":"T02","name":"李老师","qualifications":["数学","物理"],"unavailable":["TUE_1000"],"preferred_slots":["MON_1330","WED_1330","FRI_0800"]},
+    {"id":"T03","name":"王老师","qualifications":["英语"],"unavailable":["FRI_1530"],"preferred_slots":["TUE_1000","THU_1330","FRI_1000"]},
+    {"id":"T04","name":"赵老师","qualifications":["物理"],"unavailable":["MON_0800"],"preferred_slots":["MON_1330","WED_1330","FRI_0800"]}
+  ],
+  "rooms": [
+    {"id":"R101","name":"思源教室","campus":"鼓楼校区","capacity":30,"equipment":["投影","白板"]},
+    {"id":"R201","name":"致远教室","campus":"鼓楼校区","capacity":45,"equipment":["投影","白板","实验台"],"unavailable":["FRI_1330"]},
+    {"id":"R301","name":"博雅教室","campus":"仙林校区","capacity":25,"equipment":["投影","白板"]}
+  ],
+  "classes": [
+    {"id":"C01","name":"高一数学A班","size":28,"preferred_slots":["MON_0800","WED_1000","FRI_1330"]},
+    {"id":"C02","name":"高一英语A班","size":22,"unavailable":["MON_0800"],"preferred_slots":["TUE_1000","THU_1330","FRI_1000"]},
+    {"id":"C03","name":"高二物理A班","size":35,"preferred_slots":["MON_1330","WED_1330","FRI_0800"]},
+    {"id":"C04","name":"初三数学冲刺班","size":24,"unavailable":["FRI_1530","THU_1530"],"preferred_slots":["TUE_0800","THU_1000","FRI_1000"]}
+  ],
+  "courses": [
+    {"id":"CR01","name":"高一数学提升","subject":"数学","class_id":"C01","sessions":2,"qualified_teacher_ids":["T01","T02"],"required_equipment":["投影"],"allowed_slots":["MON_0800","WED_1000","FRI_1330"]},
+    {"id":"CR02","name":"高一英语阅读","subject":"英语","class_id":"C02","sessions":2,"qualified_teacher_ids":["T03"],"required_equipment":["投影"],"allowed_slots":["TUE_1000","THU_1330","FRI_1000"]},
+    {"id":"CR03","name":"高二物理实验","subject":"物理","class_id":"C03","sessions":2,"qualified_teacher_ids":["T02","T04"],"required_equipment":["实验台"],"allowed_slots":["MON_1330","WED_1330","FRI_0800"]},
+    {"id":"CR04","name":"初三数学冲刺","subject":"数学","class_id":"C04","sessions":2,"qualified_teacher_ids":["T01","T02"],"required_equipment":["白板"],"allowed_slots":["TUE_0800","THU_1000","FRI_1000"]}
+  ]
+}

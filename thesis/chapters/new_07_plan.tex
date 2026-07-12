@@ -1,0 +1,93 @@
+% ==================== 第 7 章 进度、分工与预期成果 ====================
+\clearpage
+\section{进度安排、团队分工与预期成果}
+
+\subsection{进度安排}
+
+进度以“模型先稳定、集成后推进、实验贯穿全程”为原则。表
+\ref{tab:research-plan} 中前期原型为已完成基础，其余为拟开展工作。
+
+\begin{table}[htbp]
+  \centering
+  \caption{课题研究进度安排}
+  \label{tab:research-plan}
+  \small
+  \begin{tabularx}{\textwidth}{L{2.3cm} L{2.8cm} Y Y}
+    \toprule
+    \textbf{阶段} & \textbf{时间} & \textbf{主要任务} & \textbf{阶段成果} \\
+    \midrule
+    前期基础 & 2026.07 上旬 & 完成数据模型、基础求解器、校验器、API 与页面原型 & 可运行原型和自动化测试 \\
+    模型完善 & 2026.07--08 & 复核约束清单，完善权重、诊断和局部重排 & 约束说明、模型版本与回归测试 \\
+    规模实验 & 2026.09 & 构造分层数据，开展性能与敏感性实验 & 原始实验数据和分析报告 \\
+    飞书集成 & 2026.10 & 完成多维表格映射、方案回写和消息卡片原型 & 集成原型与接口文档 \\
+    流程验证 & 2026.11 & 接入审批流程，开展调课与可用性测试 & 场景测试记录和问题清单 \\
+    总结交付 & 2026.12 & 整理代码、文档、演示材料和研究结论 & 完整作品、报告和演示视频 \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\subsection{团队分工}
+
+当前报告按已确认负责人李帅锋编制，主要承担约束建模、求解器、服务接口、
+前端原型、测试与文档整合。其他成员及指导教师信息应以正式报名表为准，
+未确认姓名和贡献比例不在报告中设置占位数据。后续如增加成员，将按“任务、
+产出、复核人”记录实际贡献，并在提交前统一更新封面和分工说明。
+
+\subsection{预期成果与验收材料}
+
+\begin{enumerate}
+  \item 一套可运行的 ClassMind 智能排课原型及源代码；
+  \item 一套覆盖硬约束、软目标、局部重排和独立校验的模型说明；
+  \item 一组可复现实验数据、测试脚本和评价报告；
+  \item 飞书多维表格、消息卡片和审批流程的集成原型与接口文档；
+  \item 开题报告、结题报告、用户说明和答辩演示材料。
+\end{enumerate}
+
+\subsection{风险识别与应对}
+
+图 \ref{fig:risk-matrix} 是项目组依据当前计划作出的定性风险评估：横轴为
+发生概率，纵轴为影响程度。风险编号越靠近右上方，越需要优先跟踪。该图
+使用白底、黑字和黑色边框，适合黑白打印。
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[x=2.2cm,y=1.45cm,font=\small]
+    % 3x3 matrix
+    \draw[black,thick] (0,0) rectangle (3,3);
+    \draw[black] (1,0)--(1,3) (2,0)--(2,3) (0,1)--(3,1) (0,2)--(3,2);
+    \node[below] at (0.5,0) {低};
+    \node[below] at (1.5,0) {中};
+    \node[below] at (2.5,0) {高};
+    \node[rotate=90,left] at (0,0.5) {低};
+    \node[rotate=90,left] at (0,1.5) {中};
+    \node[rotate=90,left] at (0,2.5) {高};
+    \node[below=0.55cm] at (1.5,0) {发生概率};
+    \node[rotate=90,left=0.75cm] at (0,1.5) {影响程度};
+
+    \node[draw=black,fill=white,circle,inner sep=2pt] at (1.45,2.55) {R1};
+    \node[draw=black,fill=white,circle,inner sep=2pt] at (1.75,2.20) {R2};
+    \node[draw=black,fill=white,circle,inner sep=2pt] at (2.45,1.55) {R3};
+    \node[draw=black,fill=white,circle,inner sep=2pt] at (1.35,1.35) {R4};
+    \node[draw=black,fill=white,circle,inner sep=2pt] at (0.65,2.30) {R5};
+  \end{tikzpicture}
+  \caption{项目风险概率—影响矩阵}
+  \label{fig:risk-matrix}
+\end{figure}
+
+\begin{table}[htbp]
+  \centering
+  \caption{主要风险及应对措施}
+  \label{tab:risk-actions}
+  \small
+  \begin{tabularx}{\textwidth}{C{1.1cm} L{3.1cm} Y Y}
+    \toprule
+    \textbf{编号} & \textbf{风险} & \textbf{预警信号} & \textbf{应对措施} \\
+    \midrule
+    R1 & 真实规模下求解超时 & 首次可行解时间随规模快速增长 & 预筛选变量、设置时限、分区求解并保留可行解回退 \\
+    R2 & 业务规则遗漏或冲突 & 试点数据频繁触发人工修正 & 建立约束清单，增加边界测试并由业务人员复核 \\
+    R3 & 飞书接口或权限受限 & 回调、配额或字段权限不满足方案 & 保持核心服务独立，使用适配层和批处理降低耦合 \\
+    R4 & 多目标权重难以解释 & 权重小幅变化导致方案大幅波动 & 使用统一分项指标，开展敏感性实验并提供默认策略 \\
+    R5 & 数据隐私与合规风险 & 采集字段超出排课必要范围 & 最小化采集、脱敏演示、访问控制并设置数据生命周期 \\
+    \bottomrule
+  \end{tabularx}
+\end{table}

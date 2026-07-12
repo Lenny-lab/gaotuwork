@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900">
+<defs>
+  <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L10,5 L0,10 z" fill="#202733"/></marker>
+  <marker id="arrowOrange" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L10,5 L0,10 z" fill="#FF5A1F"/></marker>
+  <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="5" stdDeviation="7" flood-color="#1D2939" flood-opacity="0.10"/></filter>
+  <style>text{font-family:'Microsoft YaHei','Noto Sans CJK SC','PingFang SC',Arial,sans-serif} .title{font-weight:700;fill:#202733} .muted{fill:#667085} .label{font-weight:600;fill:#202733} .small{font-size:18px;fill:#667085}</style>
+</defs>
+<rect width="100%" height="100%" fill="#FFFFFF"/>
+<rect x="0" y="0" width="12" height="900" fill="#FF5A1F"/>
+<text x="70" y="74" font-size="34" class="title">核心数据流与对象转换</text>
+<text x="70" y="108" font-size="18" class="muted">JSON业务数据经不可变模型、求解器与校验器转换为可视化课表</text>
+<line x1="70" y1="134" x2="1370" y2="134" stroke="#D9E0EA" stroke-width="2"/>
+
+<rect x="55" y="300" width="165" height="120" rx="14" fill="#FFF1EA" stroke="#FF5A1F" stroke-width="2"/>
+<circle cx="83" cy="328" r="17" fill="#FF5A1F"/><text x="83" y="334" font-size="15" fill="white" font-weight="700" text-anchor="middle">10</text>
+<text x="109" y="337" font-size="18" fill="#202733" font-weight="700" text-anchor="start" class="">多维表格/JSON</text>
+<text x="137.5" y="370" font-size="17" fill="#667085" font-weight="400" text-anchor="middle">
+<tspan x="137.5" dy="0">原始业务记录</tspan>
+</text>
+<path d="M220,360 L245,360" fill="none" stroke="#202733" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="245" y="300" width="165" height="120" rx="14" fill="#EDF3FF" stroke="#356AE6" stroke-width="2"/>
+<circle cx="273" cy="328" r="17" fill="#FF5A1F"/><text x="273" y="334" font-size="15" fill="white" font-weight="700" text-anchor="middle">20</text>
+<text x="299" y="337" font-size="18" fill="#202733" font-weight="700" text-anchor="start" class="">load_problem</text>
+<text x="327.5" y="370" font-size="17" fill="#667085" font-weight="400" text-anchor="middle">
+<tspan x="327.5" dy="0">结构解析</tspan>
+</text>
+<path d="M410,360 L435,360" fill="none" stroke="#202733" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="435" y="300" width="165" height="120" rx="14" fill="#FFFFFF" stroke="#202733" stroke-width="2"/>
+<circle cx="463" cy="328" r="17" fill="#FF5A1F"/><text x="463" y="334" font-size="15" fill="white" font-weight="700" text-anchor="middle">30</text>
+<text x="489" y="337" font-size="18" fill="#202733" font-weight="700" text-anchor="start" class="">Problem</text>
+<text x="517.5" y="370" font-size="17" fill="#667085" font-weight="400" text-anchor="middle">
+<tspan x="517.5" dy="0">不可变数据类</tspan>
+</text>
+<path d="M600,360 L625,360" fill="none" stroke="#202733" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="625" y="300" width="165" height="120" rx="14" fill="#EAF8F3" stroke="#20A875" stroke-width="2"/>
+<circle cx="653" cy="328" r="17" fill="#FF5A1F"/><text x="653" y="334" font-size="15" fill="white" font-weight="700" text-anchor="middle">40</text>
+<text x="679" y="337" font-size="18" fill="#202733" font-weight="700" text-anchor="start" class="">solve_schedule</text>
+<text x="707.5" y="370" font-size="17" fill="#667085" font-weight="400" text-anchor="middle">
+<tspan x="707.5" dy="0">CP-SAT 优化</tspan>
+</text>
+<path d="M790,360 L815,360" fill="none" stroke="#202733" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="815" y="300" width="165" height="120" rx="14" fill="#FFFFFF" stroke="#202733" stroke-width="2"/>
+<circle cx="843" cy="328" r="17" fill="#FF5A1F"/><text x="843" y="334" font-size="15" fill="white" font-weight="700" text-anchor="middle">50</text>
+<text x="869" y="337" font-size="18" fill="#202733" font-weight="700" text-anchor="start" class="">SolveResult</text>
+<text x="897.5" y="370" font-size="17" fill="#667085" font-weight="400" text-anchor="middle">
+<tspan x="897.5" dy="0">课表 + 指标</tspan>
+</text>
+<path d="M980,360 L1005,360" fill="none" stroke="#202733" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="1005" y="300" width="165" height="120" rx="14" fill="#EDF3FF" stroke="#356AE6" stroke-width="2"/>
+<circle cx="1033" cy="328" r="17" fill="#FF5A1F"/><text x="1033" y="334" font-size="15" fill="white" font-weight="700" text-anchor="middle">60</text>
+<text x="1059" y="337" font-size="18" fill="#202733" font-weight="700" text-anchor="start" class="">API Response</text>
+<text x="1087.5" y="370" font-size="17" fill="#667085" font-weight="400" text-anchor="middle">
+<tspan x="1087.5" dy="0">UTF-8 JSON</tspan>
+</text>
+<path d="M1170,360 L1195,360" fill="none" stroke="#202733" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="1195" y="300" width="165" height="120" rx="14" fill="#FFF1EA" stroke="#FF5A1F" stroke-width="2"/>
+<circle cx="1223" cy="328" r="17" fill="#FF5A1F"/><text x="1223" y="334" font-size="15" fill="white" font-weight="700" text-anchor="middle">70</text>
+<text x="1249" y="337" font-size="18" fill="#202733" font-weight="700" text-anchor="start" class="">四个子页面</text>
+<text x="1277.5" y="370" font-size="17" fill="#667085" font-weight="400" text-anchor="middle">
+<tspan x="1277.5" dy="0">决策与操作</tspan>
+</text>
+<rect x="470" y="520" width="240" height="90" rx="14" fill="#FFFFFF" stroke="#20A875" stroke-width="2"/>
+<circle cx="498" cy="548" r="17" fill="#FF5A1F"/><text x="498" y="554" font-size="15" fill="white" font-weight="700" text-anchor="middle">90</text>
+<text x="524" y="557" font-size="19" fill="#202733" font-weight="700" text-anchor="start" class="">数据校验器</text>
+<text x="590.0" y="590" font-size="17" fill="#667085" font-weight="400" text-anchor="middle">
+<tspan x="590.0" dy="0">输入引用 · 字段范围</tspan>
+</text>
+<rect x="760" y="520" width="240" height="90" rx="14" fill="#FFFFFF" stroke="#20A875" stroke-width="2"/>
+<circle cx="788" cy="548" r="17" fill="#FF5A1F"/><text x="788" y="554" font-size="15" fill="white" font-weight="700" text-anchor="middle">100</text>
+<text x="814" y="557" font-size="19" fill="#202733" font-weight="700" text-anchor="start" class="">课表校验器</text>
+<text x="880.0" y="590" font-size="17" fill="#667085" font-weight="400" text-anchor="middle">
+<tspan x="880.0" dy="0">冲突 · 容量 · 资质</tspan>
+</text>
+<path d="M517,420 L590,518" fill="none" stroke="#20A875" stroke-width="2.5" marker-end="url(#arrow)" stroke-dasharray="8 6"/>
+<rect x="498.5" y="443.0" width="110" height="25" rx="12" fill="white"/><text x="553.5" y="461.0" font-size="14" fill="#667085" text-anchor="middle">校验</text>
+<path d="M887,420 L880,518" fill="none" stroke="#20A875" stroke-width="2.5" marker-end="url(#arrow)" stroke-dasharray="8 6"/>
+<rect x="828.5" y="443.0" width="110" height="25" rx="12" fill="white"/><text x="883.5" y="461.0" font-size="14" fill="#667085" text-anchor="middle">复核</text>
+<path d="M880,610 C880,720 517,720 517,425" fill="none" stroke="#FF5A1F" stroke-width="2.5" stroke-dasharray="9 7" marker-end="url(#arrowOrange)"/>
+<text x="700" y="700" font-size="17" fill="#FF5A1F" font-weight="700" text-anchor="middle" class="">失败时返回可操作的诊断信息</text>
+<rect x="210" y="195" width="160" height="36" rx="18" fill="#F6F8FB"/><text x="290.0" y="219" font-size="15" fill="#202733" font-weight="600" text-anchor="middle">Teacher</text>
+<rect x="415" y="195" width="160" height="36" rx="18" fill="#F6F8FB"/><text x="495.0" y="219" font-size="15" fill="#202733" font-weight="600" text-anchor="middle">Room</text>
+<rect x="620" y="195" width="160" height="36" rx="18" fill="#F6F8FB"/><text x="700.0" y="219" font-size="15" fill="#202733" font-weight="600" text-anchor="middle">ClassGroup</text>
+<rect x="825" y="195" width="160" height="36" rx="18" fill="#F6F8FB"/><text x="905.0" y="219" font-size="15" fill="#202733" font-weight="600" text-anchor="middle">CourseRequest</text>
+<rect x="1030" y="195" width="160" height="36" rx="18" fill="#F6F8FB"/><text x="1110.0" y="219" font-size="15" fill="#202733" font-weight="600" text-anchor="middle">TimeSlot</text>
+<text x="1370" y="865" text-anchor="end" font-size="14" fill="#98A2B3">ClassMind · 高途智能排课脑</text></svg>

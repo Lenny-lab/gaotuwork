@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900">
+<defs>
+  <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L10,5 L0,10 z" fill="#202733"/></marker>
+  <marker id="arrowOrange" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L10,5 L0,10 z" fill="#FF5A1F"/></marker>
+  <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="5" stdDeviation="7" flood-color="#1D2939" flood-opacity="0.10"/></filter>
+  <style>text{font-family:'Microsoft YaHei','Noto Sans CJK SC','PingFang SC',Arial,sans-serif} .title{font-weight:700;fill:#202733} .muted{fill:#667085} .label{font-weight:600;fill:#202733} .small{font-size:18px;fill:#667085}</style>
+</defs>
+<rect width="100%" height="100%" fill="#FFFFFF"/>
+<rect x="0" y="0" width="12" height="900" fill="#FF5A1F"/>
+<text x="70" y="74" font-size="34" class="title">ClassMind 总体系统架构</text>
+<text x="70" y="108" font-size="18" class="muted">四层解耦架构：协作入口、应用交互、业务服务与约束求解</text>
+<line x1="70" y1="134" x2="1370" y2="134" stroke="#D9E0EA" stroke-width="2"/>
+
+<rect x="70" y="170" width="1300" height="122" rx="20" fill="#FFF1EA" stroke="#FF5A1F" stroke-opacity="0.35"/>
+<text x="100" y="204" font-size="18" fill="#FF5A1F" font-weight="700" text-anchor="start" class="">协作与交互层</text>
+<rect x="70" y="330" width="1300" height="122" rx="20" fill="#EDF3FF" stroke="#356AE6" stroke-opacity="0.35"/>
+<text x="100" y="364" font-size="18" fill="#356AE6" font-weight="700" text-anchor="start" class="">API 与业务层</text>
+<rect x="70" y="490" width="1300" height="122" rx="20" fill="#EAF8F3" stroke="#20A875" stroke-opacity="0.35"/>
+<text x="100" y="524" font-size="18" fill="#20A875" font-weight="700" text-anchor="start" class="">算法与校验层</text>
+<rect x="70" y="650" width="1300" height="122" rx="20" fill="#F6F8FB" stroke="#667085" stroke-opacity="0.35"/>
+<text x="100" y="684" font-size="18" fill="#667085" font-weight="700" text-anchor="start" class="">数据与基础设施层</text>
+<rect x="290" y="190" width="210" height="76" rx="12" fill="#FFFFFF" stroke="#FF5A1F" stroke-width="2"/>
+<circle cx="318" cy="218" r="17" fill="#FF5A1F"/><text x="318" y="224" font-size="15" fill="white" font-weight="700" text-anchor="middle">10</text>
+<text x="344" y="227" font-size="18" fill="#202733" font-weight="700" text-anchor="start" class="">决策驾驶舱</text>
+<text x="395.0" y="260" font-size="17" fill="#667085" font-weight="400" text-anchor="middle">
+<tspan x="395.0" dy="0">指标与方案</tspan>
+</text>
+<rect x="545" y="190" width="210" height="76" rx="12" fill="#FFFFFF" stroke="#FF5A1F" stroke-width="2"/>
+<circle cx="573" cy="218" r="17" fill="#FF5A1F"/><text x="573" y="224" font-size="15" fill="white" font-weight="700" text-anchor="middle">20</text>
+<text x="599" y="227" font-size="18" fill="#202733" font-weight="700" text-anchor="start" class="">智能排课</text>
+<text x="650.0" y="260" font-size="17" fill="#667085" font-weight="400" text-anchor="middle">
+<tspan x="650.0" dy="0">全日课表</tspan>
+</text>
+<rect x="800" y="190" width="210" height="76" rx="12" fill="#FFFFFF" stroke="#FF5A1F" stroke-width="2"/>
+<circle cx="828" cy="218" r="17" fill="#FF5A1F"/><text x="828" y="224" font-size="15" fill="white" font-weight="700" text-anchor="middle">30</text>
+<text x="854" y="227" font-size="18" fill="#202733" font-weight="700" text-anchor="start" class="">调课中心</text>
+<text x="905.0" y="260" font-size="17" fill="#667085" font-weight="400" text-anchor="middle">
+<tspan x="905.0" dy="0">最小影响</tspan>
+</text>
+<rect x="1055" y="190" width="210" height="76" rx="12" fill="#FFFFFF" stroke="#FF5A1F" stroke-width="2"/>
+<circle cx="1083" cy="218" r="17" fill="#FF5A1F"/><text x="1083" y="224" font-size="15" fill="white" font-weight="700" text-anchor="middle">40</text>
+<text x="1109" y="227" font-size="18" fill="#202733" font-weight="700" text-anchor="start" class="">资源概览</text>
+<text x="1160.0" y="260" font-size="17" fill="#667085" font-weight="400" text-anchor="middle">
+<tspan x="1160.0" dy="0">基础数据</tspan>
+</text>
+<rect x="300" y="350" width="330" height="76" rx="12" fill="#FFFFFF" stroke="#356AE6" stroke-width="2"/>
+<circle cx="328" cy="378" r="17" fill="#FF5A1F"/><text x="328" y="384" font-size="15" fill="white" font-weight="700" text-anchor="middle">50</text>
+<text x="354" y="387" font-size="20" fill="#202733" font-weight="700" text-anchor="start" class="">HTTP API 网关</text>
+<text x="465.0" y="420" font-size="17" fill="#667085" font-weight="400" text-anchor="middle">
+<tspan x="465.0" dy="0">路由 · 校验 · 静态服务</tspan>
+</text>
+<rect x="805" y="350" width="330" height="76" rx="12" fill="#FFFFFF" stroke="#356AE6" stroke-width="2"/>
+<circle cx="833" cy="378" r="17" fill="#FF5A1F"/><text x="833" y="384" font-size="15" fill="white" font-weight="700" text-anchor="middle">60</text>
+<text x="859" y="387" font-size="20" fill="#202733" font-weight="700" text-anchor="start" class="">业务编排服务</text>
+<text x="970.0" y="420" font-size="17" fill="#667085" font-weight="400" text-anchor="middle">
+<tspan x="970.0" dy="0">评分 · 方案组合 · 差异分析</tspan>
+</text>
+<rect x="235" y="510" width="300" height="76" rx="12" fill="#FFFFFF" stroke="#20A875" stroke-width="2"/>
+<circle cx="263" cy="538" r="17" fill="#FF5A1F"/><text x="263" y="544" font-size="15" fill="white" font-weight="700" text-anchor="middle">70</text>
+<text x="289" y="547" font-size="19" fill="#202733" font-weight="700" text-anchor="start" class="">CP-SAT 求解器</text>
+<text x="385.0" y="580" font-size="17" fill="#667085" font-weight="400" text-anchor="middle">
+<tspan x="385.0" dy="0">硬约束 + 软目标</tspan>
+</text>
+<rect x="590" y="510" width="300" height="76" rx="12" fill="#FFFFFF" stroke="#20A875" stroke-width="2"/>
+<circle cx="618" cy="538" r="17" fill="#FF5A1F"/><text x="618" y="544" font-size="15" fill="white" font-weight="700" text-anchor="middle">80</text>
+<text x="644" y="547" font-size="19" fill="#202733" font-weight="700" text-anchor="start" class="">独立校验器</text>
+<text x="740.0" y="580" font-size="17" fill="#667085" font-weight="400" text-anchor="middle">
+<tspan x="740.0" dy="0">结果二次复核</tspan>
+</text>
+<rect x="945" y="510" width="300" height="76" rx="12" fill="#FFFFFF" stroke="#20A875" stroke-width="2"/>
+<circle cx="973" cy="538" r="17" fill="#FF5A1F"/><text x="973" y="544" font-size="15" fill="white" font-weight="700" text-anchor="middle">90</text>
+<text x="999" y="547" font-size="19" fill="#202733" font-weight="700" text-anchor="start" class="">数据 I/O</text>
+<text x="1095.0" y="580" font-size="17" fill="#667085" font-weight="400" text-anchor="middle">
+<tspan x="1095.0" dy="0">JSON ↔ Problem</tspan>
+</text>
+<rect x="235" y="690" width="300" height="66" rx="12" fill="#FFFFFF" stroke="#D9E0EA" stroke-width="2"/>
+<circle cx="263" cy="718" r="17" fill="#FF5A1F"/><text x="263" y="724" font-size="15" fill="white" font-weight="700" text-anchor="middle">100</text>
+<text x="289" y="727" font-size="18" fill="#202733" font-weight="700" text-anchor="start" class="">业务数据类</text>
+<rect x="590" y="690" width="300" height="66" rx="12" fill="#FFFFFF" stroke="#D9E0EA" stroke-width="2"/>
+<circle cx="618" cy="718" r="17" fill="#FF5A1F"/><text x="618" y="724" font-size="15" fill="white" font-weight="700" text-anchor="middle">110</text>
+<text x="644" y="727" font-size="18" fill="#202733" font-weight="700" text-anchor="start" class="">演示数据 JSON</text>
+<rect x="945" y="690" width="300" height="66" rx="12" fill="#FFFFFF" stroke="#D9E0EA" stroke-width="2"/>
+<circle cx="973" cy="718" r="17" fill="#FF5A1F"/><text x="973" y="724" font-size="15" fill="white" font-weight="700" text-anchor="middle">120</text>
+<text x="999" y="727" font-size="18" fill="#202733" font-weight="700" text-anchor="start" class="">OR-Tools 9.15</text>
+<path d="M395,266 L395,348" fill="none" stroke="#202733" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="340.0" y="281.0" width="110" height="25" rx="12" fill="white"/><text x="395.0" y="299.0" font-size="14" fill="#667085" text-anchor="middle">REST</text>
+<path d="M650,266 L650,348" fill="none" stroke="#202733" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="595.0" y="281.0" width="110" height="25" rx="12" fill="white"/><text x="650.0" y="299.0" font-size="14" fill="#667085" text-anchor="middle">REST</text>
+<path d="M905,266 L905,348" fill="none" stroke="#202733" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="850.0" y="281.0" width="110" height="25" rx="12" fill="white"/><text x="905.0" y="299.0" font-size="14" fill="#667085" text-anchor="middle">REST</text>
+<path d="M1160,266 L1160,348" fill="none" stroke="#202733" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="1105.0" y="281.0" width="110" height="25" rx="12" fill="white"/><text x="1160.0" y="299.0" font-size="14" fill="#667085" text-anchor="middle">REST</text>
+<path d="M630,388 L803,388" fill="none" stroke="#202733" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="661.5" y="362.0" width="110" height="25" rx="12" fill="white"/><text x="716.5" y="380.0" font-size="14" fill="#667085" text-anchor="middle">调用</text>
+<path d="M970,426 L385,508" fill="none" stroke="#202733" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="622.5" y="441.0" width="110" height="25" rx="12" fill="white"/><text x="677.5" y="459.0" font-size="14" fill="#667085" text-anchor="middle">求解请求</text>
+<path d="M970,426 L740,508" fill="none" stroke="#202733" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="800.0" y="441.0" width="110" height="25" rx="12" fill="white"/><text x="855.0" y="459.0" font-size="14" fill="#667085" text-anchor="middle">复核</text>
+<path d="M465,586 L385,688" fill="none" stroke="#202733" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="370.0" y="611.0" width="110" height="25" rx="12" fill="white"/><text x="425.0" y="629.0" font-size="14" fill="#667085" text-anchor="middle">模型</text>
+<path d="M740,586 L740,688" fill="none" stroke="#202733" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="685.0" y="611.0" width="110" height="25" rx="12" fill="white"/><text x="740.0" y="629.0" font-size="14" fill="#667085" text-anchor="middle">读取</text>
+<path d="M1010,586 L1095,688" fill="none" stroke="#202733" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="997.5" y="611.0" width="110" height="25" rx="12" fill="white"/><text x="1052.5" y="629.0" font-size="14" fill="#667085" text-anchor="middle">依赖</text>
+<text x="1370" y="865" text-anchor="end" font-size="14" fill="#98A2B3">ClassMind · 高途智能排课脑</text></svg>

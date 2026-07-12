@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900">
+<defs>
+  <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L10,5 L0,10 z" fill="#202733"/></marker>
+  <marker id="arrowOrange" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L10,5 L0,10 z" fill="#FF5A1F"/></marker>
+  <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="5" stdDeviation="7" flood-color="#1D2939" flood-opacity="0.10"/></filter>
+  <style>text{font-family:'Microsoft YaHei','Noto Sans CJK SC','PingFang SC',Arial,sans-serif} .title{font-weight:700;fill:#202733} .muted{fill:#667085} .label{font-weight:600;fill:#202733} .small{font-size:18px;fill:#667085}</style>
+</defs>
+<rect width="100%" height="100%" fill="#FFFFFF"/>
+<rect x="0" y="0" width="12" height="900" fill="#FF5A1F"/>
+<text x="70" y="74" font-size="34" class="title">CP-SAT 排课约束模型</text>
+<text x="70" y="108" font-size="18" class="muted">决策变量、硬约束与软目标共同组成可解释的组合优化模型</text>
+<line x1="70" y1="134" x2="1370" y2="134" stroke="#D9E0EA" stroke-width="2"/>
+
+<rect x="530" y="210" width="380" height="120" rx="18" fill="#FFF1EA" stroke="#FF5A1F" stroke-width="2" filter="url(#shadow)"/>
+<circle cx="558" cy="238" r="17" fill="#FF5A1F"/><text x="558" y="244" font-size="15" fill="white" font-weight="700" text-anchor="middle">10</text>
+<text x="584" y="247" font-size="24" fill="#202733" font-weight="700" text-anchor="start" class="">决策变量  xₗ,ₜ,ᵣ,ₛ</text>
+<text x="720.0" y="280" font-size="17" fill="#667085" font-weight="400" text-anchor="middle">
+<tspan x="720.0" dy="0">课次 l 是否由教师 t 在教室 r、时段 s 上课</tspan>
+<tspan x="720.0" dy="25">布尔变量 ∈ {0,1}</tspan>
+</text>
+<rect x="80" y="200" width="230" height="105" rx="14" fill="#FFFFFF" stroke="#356AE6" stroke-width="2"/>
+<circle cx="108" cy="228" r="17" fill="#FF5A1F"/><text x="108" y="234" font-size="15" fill="white" font-weight="700" text-anchor="middle">20</text>
+<text x="134" y="237" font-size="18" fill="#202733" font-weight="700" text-anchor="start" class="">每课恰好一次</text>
+<text x="195.0" y="270" font-size="17" fill="#667085" font-weight="400" text-anchor="middle">
+<tspan x="195.0" dy="0">Σ x = 1</tspan>
+</text>
+<path d="M310,252 L528,270" fill="none" stroke="#356AE6" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="80" y="370" width="230" height="105" rx="14" fill="#FFFFFF" stroke="#356AE6" stroke-width="2"/>
+<circle cx="108" cy="398" r="17" fill="#FF5A1F"/><text x="108" y="404" font-size="15" fill="white" font-weight="700" text-anchor="middle">30</text>
+<text x="134" y="407" font-size="18" fill="#202733" font-weight="700" text-anchor="start" class="">教师零冲突</text>
+<text x="195.0" y="440" font-size="17" fill="#667085" font-weight="400" text-anchor="middle">
+<tspan x="195.0" dy="0">同教师同刻 ≤ 1</tspan>
+</text>
+<path d="M310,422 L528,270" fill="none" stroke="#356AE6" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="80" y="540" width="230" height="105" rx="14" fill="#FFFFFF" stroke="#356AE6" stroke-width="2"/>
+<circle cx="108" cy="568" r="17" fill="#FF5A1F"/><text x="108" y="574" font-size="15" fill="white" font-weight="700" text-anchor="middle">40</text>
+<text x="134" y="577" font-size="18" fill="#202733" font-weight="700" text-anchor="start" class="">教室零冲突</text>
+<text x="195.0" y="610" font-size="17" fill="#667085" font-weight="400" text-anchor="middle">
+<tspan x="195.0" dy="0">同教室同刻 ≤ 1</tspan>
+</text>
+<path d="M310,592 L528,270" fill="none" stroke="#356AE6" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="1140" y="285" width="230" height="105" rx="14" fill="#FFFFFF" stroke="#356AE6" stroke-width="2"/>
+<circle cx="1168" cy="313" r="17" fill="#FF5A1F"/><text x="1168" y="319" font-size="15" fill="white" font-weight="700" text-anchor="middle">50</text>
+<text x="1194" y="322" font-size="18" fill="#202733" font-weight="700" text-anchor="start" class="">班级零冲突</text>
+<text x="1255.0" y="355" font-size="17" fill="#667085" font-weight="400" text-anchor="middle">
+<tspan x="1255.0" dy="0">同班级同刻 ≤ 1</tspan>
+</text>
+<path d="M1140,337 L912,270" fill="none" stroke="#356AE6" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="1140" y="500" width="230" height="105" rx="14" fill="#FFFFFF" stroke="#356AE6" stroke-width="2"/>
+<circle cx="1168" cy="528" r="17" fill="#FF5A1F"/><text x="1168" y="534" font-size="15" fill="white" font-weight="700" text-anchor="middle">60</text>
+<text x="1194" y="537" font-size="18" fill="#202733" font-weight="700" text-anchor="start" class="">业务可行性</text>
+<text x="1255.0" y="570" font-size="17" fill="#667085" font-weight="400" text-anchor="middle">
+<tspan x="1255.0" dy="0">资质 · 容量 · 设备 · 可用</tspan>
+</text>
+<path d="M1140,552 L912,270" fill="none" stroke="#356AE6" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="360" y="440" width="720" height="245" rx="22" fill="#EAF8F3" stroke="#20A875" stroke-width="2"/>
+<text x="720" y="482" font-size="24" fill="#20A875" font-weight="700" text-anchor="middle" class="">软目标函数：最小化加权成本 Z</text>
+<rect x="390" y="520" width="115" height="105" rx="12" fill="#FFFFFF" stroke="#20A875" stroke-width="2"/>
+<circle cx="418" cy="548" r="17" fill="#FF5A1F"/><text x="418" y="554" font-size="15" fill="white" font-weight="700" text-anchor="middle">70</text>
+<text x="444" y="557" font-size="16" fill="#202733" font-weight="700" text-anchor="start" class="">学生偏好</text>
+<text x="447.5" y="590" font-size="17" fill="#667085" font-weight="400" text-anchor="middle">
+<tspan x="447.5" dy="0">时段体验</tspan>
+</text>
+<rect x="525" y="520" width="115" height="105" rx="12" fill="#FFFFFF" stroke="#20A875" stroke-width="2"/>
+<circle cx="553" cy="548" r="17" fill="#FF5A1F"/><text x="553" y="554" font-size="15" fill="white" font-weight="700" text-anchor="middle">80</text>
+<text x="579" y="557" font-size="16" fill="#202733" font-weight="700" text-anchor="start" class="">教师偏好</text>
+<text x="582.5" y="590" font-size="17" fill="#667085" font-weight="400" text-anchor="middle">
+<tspan x="582.5" dy="0">授课稳定</tspan>
+</text>
+<rect x="660" y="520" width="115" height="105" rx="12" fill="#FFFFFF" stroke="#20A875" stroke-width="2"/>
+<circle cx="688" cy="548" r="17" fill="#FF5A1F"/><text x="688" y="554" font-size="15" fill="white" font-weight="700" text-anchor="middle">90</text>
+<text x="714" y="557" font-size="16" fill="#202733" font-weight="700" text-anchor="start" class="">容量适配</text>
+<text x="717.5" y="590" font-size="17" fill="#667085" font-weight="400" text-anchor="middle">
+<tspan x="717.5" dy="0">资源效率</tspan>
+</text>
+<rect x="795" y="520" width="115" height="105" rx="12" fill="#FFFFFF" stroke="#20A875" stroke-width="2"/>
+<circle cx="823" cy="548" r="17" fill="#FF5A1F"/><text x="823" y="554" font-size="15" fill="white" font-weight="700" text-anchor="middle">100</text>
+<text x="849" y="557" font-size="16" fill="#202733" font-weight="700" text-anchor="start" class="">时段紧凑</text>
+<text x="852.5" y="590" font-size="17" fill="#667085" font-weight="400" text-anchor="middle">
+<tspan x="852.5" dy="0">减少空档</tspan>
+</text>
+<rect x="930" y="520" width="115" height="105" rx="12" fill="#FFFFFF" stroke="#20A875" stroke-width="2"/>
+<circle cx="958" cy="548" r="17" fill="#FF5A1F"/><text x="958" y="554" font-size="15" fill="white" font-weight="700" text-anchor="middle">110</text>
+<text x="984" y="557" font-size="16" fill="#202733" font-weight="700" text-anchor="start" class="">方案变更</text>
+<text x="987.5" y="590" font-size="17" fill="#667085" font-weight="400" text-anchor="middle">
+<tspan x="987.5" dy="0">调课影响</tspan>
+</text>
+<path d="M720,330 L720,438" fill="none" stroke="#20A875" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="665.0" y="358.0" width="110" height="25" rx="12" fill="white"/><text x="720.0" y="376.0" font-size="14" fill="#667085" text-anchor="middle">可行解</text>
+<rect x="550" y="730" width="340" height="36" rx="18" fill="#EAF8F3"/><text x="720.0" y="754" font-size="15" fill="#20A875" font-weight="600" text-anchor="middle">输出：OPTIMAL / FEASIBLE + 零硬冲突</text>
+<text x="1370" y="865" text-anchor="end" font-size="14" fill="#98A2B3">ClassMind · 高途智能排课脑</text></svg>

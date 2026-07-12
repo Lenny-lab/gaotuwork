@@ -1,0 +1,159 @@
+﻿% ==================== 第 8 章 项目管理 ====================
+\section{项目管理与进度计划}
+
+\subsection{团队分工}
+
+项目分工按当前申报信息列示如下；提交前应由团队负责人复核成员姓名、
+贡献比例和指导教师信息，确保与赛事报名表一致。
+
+\begin{table}[h]
+\centering
+\caption{团队分工}
+\label{tab:team}
+\small
+\begin{tabularx}{\textwidth}{l l l X}
+\toprule
+\textbf{成员} & \textbf{角色} & \textbf{贡献} & \textbf{工作量} \\
+\midrule
+李帅锋
+  & 队长 / 算法 / 全栈
+  & CP-SAT 求解器 / 评分卡 / 调课算法 / API 网关 / 前端 4 页 / CI
+  & 约 60\% \\
+张同学
+  & 数据建模
+  & 业务数据收集、演示数据构造、需求调研
+  & 约 15\% \\
+王同学
+  & UI 设计
+  & 设计稿、配色方案、用户访谈
+  & 约 10\% \\
+赵同学
+  & 测试与文档
+  & 单元测试 / 集成测试 / 用户手册撰写
+  & 约 15\% \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{进度计划}
+
+\begin{table}[h]
+\centering
+\caption{第一阶段进度计划（2026.07.01--2026.07.12）}
+\label{tab:timeline}
+\small
+\begin{tabularx}{\textwidth}{l l l X}
+\toprule
+\textbf{阶段} & \textbf{时间} & \textbf{里程碑} & \textbf{交付物} \\
+\midrule
+需求调研
+  & 07.01--07.03
+  & 梳理典型排课流程
+  & 需求清单、对象模型 \\
+数据建模
+  & 07.04--07.05
+  & 完成 5 类数据类
+  & \code{models.py}、\code{demo.json} \\
+硬约束求解
+  & 07.06--07.07
+  & 8 课次 0 冲突
+  & \code{solver.py} v1 \\
+软目标与多策略
+  & 07.08--07.09
+  & 5 套策略可比较
+  & \code{solver.py} v2、调课算法 \\
+REST API
+  & 07.10
+  & 6 个端点全通
+  & \code{api.py}、CI 配置 \\
+前端 4 页面
+  & 07.11
+  & 仪表盘 + 课表 + 调课 + 资源
+  & \code{web/*.html/css/js} \\
+测试与文档
+  & 07.12
+  & 19 测试通过
+  & \code{tests/}、本报告 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{第二阶段规划}
+
+\begin{table}[h]
+\centering
+\caption{第二阶段规划（2026.08--2026.12）}
+\label{tab:phase2}
+\small
+\begin{tabularx}{\textwidth}{l l l X}
+\toprule
+\textbf{阶段} & \textbf{时间} & \textbf{目标} & \textbf{交付物} \\
+\midrule
+飞书集成准备
+  & 08.01--08.15
+  & 申请企业自建应用、获取 tenant\_access\_token
+  & 飞书应用凭据、回调地址 \\
+多维表格双向同步
+  & 08.16--09.15
+  & 业务数据可编辑、课表可回写
+  & 多维表格 schema、同步服务 \\
+消息卡片推送
+  & 09.16--10.15
+  & 方案确认后自动 @ 师生
+  & 消息卡片模板、推送任务 \\
+审批流程
+  & 10.16--11.15
+  & 调课需教务主任审批
+  & 审批定义、Webhook 处理 \\
+自然语言解析
+  & 11.16--12.15
+  & 飞书 AI 助手直接调用
+  & Prompt 模板、调用 demo \\
+总结与答辩
+  & 12.16--12.31
+  & 完成项目总结、准备答辩
+  & 结题报告、演示视频 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{风险与对策}
+
+\begin{table}[h]
+\centering
+\caption{主要风险与对策}
+\label{tab:risk}
+\small
+\begin{tabularx}{\textwidth}{l c X X}
+\toprule
+\textbf{风险} & \textbf{概率} & \textbf{影响} & \textbf{对策} \\
+\midrule
+OR-Tools 性能不足
+  & 中
+  & 大规模场景超时
+  & 1) 提前预筛选变量；2) 拆分大模型；3) 退而求其次用贪心 \\
+飞书 API 配额不足
+  & 中
+  & 第二阶段功能受限
+  & 申请高校合作计划免费额度 + 异步批处理 \\
+教师/学生数据隐私
+  & 中
+  & 合规风险
+  & 演示数据全虚构，商用前做数据脱敏 \\
+团队成员变动
+  & 低
+  & 进度延迟
+  & 文档与测试覆盖到位，新成员 1 周可接手 \\
+业务需求变化
+  & 中
+  & 设计返工
+  & 软目标权重表可灵活调整，硬约束通过数据驱动 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{本章小结}
+
+本章给出了项目团队分工、第一阶段迭代进度、第二阶段
+5 个月规划以及主要风险与对策。项目按计划顺利推进，
+为第二阶段飞书生态集成打下了坚实基础。

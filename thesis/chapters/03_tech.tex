@@ -1,0 +1,139 @@
+﻿% ==================== 第 3 章 关键技术综述 ====================
+\section{关键技术综述}
+
+\subsection{约束规划（Constraint Programming）}
+
+\subsubsection{基本概念}
+
+约束规划（Constraint Programming, CP）是一种通过声明式方式
+描述"问题必须满足的条件"并由求解器自动寻找满足所有约束的
+变量赋值的方法。一个 CP 问题由三部分组成：
+\begin{enumerate}[leftmargin=2em,itemsep=0.2em]
+\item \textbf{变量（Variables）：}有限定义域上的未知量。
+\item \textbf{域（Domains）：}每个变量的取值范围，如 0/1 布尔、整数区间。
+\item \textbf{约束（Constraints）：}变量之间的关系表达式，
+如 $x + y \leq 10$、\code{AllDifferent}、\code{ExactlyOne} 等。
+\end{enumerate}
+
+CP 求解器的核心是\textbf{回溯搜索 + 约束传播}：每次给变量赋值时，
+自动剪掉不可能的取值；当所有变量都赋值成功则得到一个可行解。
+本项目使用 OR-Tools CP-SAT，其在传统 CP 基础上融合了
+\textbf{SAT 求解器的冲突学习}与\textbf{线性规划松弛}，在工业级
+问题上显著优于纯 CP 或纯 SAT。
+
+\subsubsection{排课问题中的 CP 建模}
+
+本项目将排课问题建模为：
+\begin{itemize}[leftmargin=2em,itemsep=0.1em]
+\item \textbf{决策变量：}布尔变量 $x_{l,t,r,s}$ 表示"课次 $l$ 是否
+安排给教师 $t$、教室 $r$、时段 $s$"。
+\item \textbf{硬约束：}\code{AddExactlyOne}（每节课必须排）、\code{AddAtMostOne}
+（教师/教室/班级同 0 冲突）、容量与设备约束。
+\item \textbf{软目标：}偏好未命中数、容量浪费、紧凑度、稳定性偏差、
+变更数等线性加权和，最小化。
+\end{itemize}
+
+\subsection{OR-Tools 求解器}
+
+\subsubsection{项目概况}
+
+OR-Tools 是 Google 开源的运筹学工具包，最初由 Google 内部
+"Operations Research" 团队开发，2014 年以 Apache 2.0 协议开源。
+其 CP-SAT 模块从 2018 年起在多个标准排课/调度数据集上
+持续保持 SOTA。
+
+\subsubsection{Python API 简介}
+
+其 Python API 的基本流程为“建立模型、声明变量、添加约束、设置目标、
+调用求解器并读取状态”。正文只说明接口职责，具体调用方式与项目源码
+节选统一放入附录，避免技术综述被代码打断。
+
+\subsubsection{本项目对 OR-Tools 的使用方式}
+
+本项目使用 OR-Tools 9.15.6755（见 \code{requirements.txt}），
+主要调用以下 API：
+\begin{itemize}[leftmargin=2em,itemsep=0.1em]
+\item \code{CpModel().new\_bool\_var(name)}：声明 0-1 决策变量；
+\item \code{add\_exactly\_one(vars)}：每节课必须排；
+\item \code{add\_at\_most\_one(vars)}：同教师/教室/班级 0 冲突；
+\item \code{minimize(linear\_expr)}：最小化软目标线性加权和；
+\item \code{CpSolver().parameters.max\_time\_in\_seconds}：15 秒硬上限；
+\item \code{CpSolver().parameters.num\_search\_workers = 8}：8 线程并行搜索；
+\item \code{CpSolver().parameters.random\_seed = 42}：保证可复现。
+\end{itemize}
+
+\subsection{Python 数据类（dataclass）}
+
+本项目用 \code{@dataclass(frozen=True)} 声明业务对象，
+使其同时具备：
+\begin{enumerate}[leftmargin=2em,itemsep=0.2em]
+\item 不可变性（frozen）：求解过程中数据不被意外修改；
+\item 自动生成 \code{\_\_init\_\_}、\code{\_\_repr\_\_}、\code{\_\_eq\_\_}；
+\item 可通过 \code{asdict()} 序列化为字典；
+\item 可通过 \code{dataclasses.replace()} 创建修改后的副本
+（用于"教师请假"场景构造新问题）。
+\end{enumerate}
+
+教师、教室、班级、课程和时间槽均以不可变数据类表达；字段定义见附录 A。
+
+\subsection{Python 标准库 HTTP 服务}
+
+为降低部署门槛，本项目不依赖 Flask / FastAPI 等框架，
+直接使用 \code{http.server.BaseHTTPRequestHandler} + \code{ThreadingHTTPServer}：
+
+服务层基于 \code{ThreadingHTTPServer} 监听本地端口，由请求处理器完成
+路由分发、JSON 序列化和错误返回；完整接口定义见附录 C。
+
+\textbf{优势：}
+\begin{itemize}[leftmargin=2em,itemsep=0.1em]
+\item 零第三方依赖（除 OR-Tools）；
+\item 多线程并发由 \code{ThreadingHTTPServer} 自动处理；
+\item 跨平台（Windows / macOS / Linux 一致）；
+\item 启动时间 < 100 ms。
+\end{itemize}
+
+\subsection{JSON 数据格式}
+
+本项目选用 JSON 作为业务数据交换格式，原因：
+\begin{itemize}[leftmargin=2em,itemsep=0.1em]
+\item 与飞书多维表格的导出格式一致；
+\item 人类可读，便于教务手工编辑；
+\item Python 标准库内置 \code{json} 模块，无需额外依赖；
+\item \code{ensure\_ascii=False} 直接支持中文字段。
+\end{itemize}
+
+\subsection{原生前端技术栈}
+
+为避免"构建 → 部署"链路，本项目前端采用：
+\begin{itemize}[leftmargin=2em,itemsep=0.1em]
+\item \textbf{HTML5：}语义化标签，浏览器直接打开；
+\item \textbf{CSS3：}原生 Grid + Flex 布局，CSS 变量主题；
+\item \textbf{JavaScript ES6：}\code{fetch} API + \code{Promise}，
+无 jQuery / Vue / React 依赖。
+\end{itemize}
+
+这种"零构建"路线对教务老师极其友好：双击 \code{launch\_classmind.bat}
+后浏览器直接打开 127.0.0.1:8766 即可使用，无需安装 Node.js、
+无需 npm install、无需 vite build。
+
+\subsection{GitHub Actions 持续集成}
+
+本项目使用 GitHub Actions 提供的免费 CI 服务，
+在 \code{push} 与 \code{pull\_request} 事件下自动跑
+Python 3.11 与 3.12 双版本测试。配置文件
+\code{.github/workflows/classmind-tests.yml} 约 30 行，
+关键步骤：
+\begin{enumerate}[leftmargin=2em,itemsep=0.2em]
+\item \code{actions/checkout@v4} 拉取代码；
+\item \code{actions/setup-python@v5} 安装 Python；
+\item \code{pip install ortools==9.15.6755}；
+\item \code{python -m unittest discover -s tests -v}。
+\end{enumerate}
+
+\subsection{本章小结}
+
+本章梳理了本项目用到的 6 大类关键技术：约束规划、
+OR-Tools CP-SAT、Python 数据类、标准库 HTTP、JSON、
+原生前端、GitHub Actions。这些技术共同的特点是
+\textbf{成熟、稳定、免费、社区活跃}，与项目"零依赖、
+可移植、可验证"的工程目标高度契合。

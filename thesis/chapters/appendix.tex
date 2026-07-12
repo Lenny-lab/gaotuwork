@@ -1,0 +1,574 @@
+﻿% ==================== 附录 ====================
+\section*{附\quad 录}
+\addcontentsline{toc}{section}{附\quad 录}
+
+\subsection*{附录 A：核心数据类定义}
+\addcontentsline{toc}{subsection}{附录 A：核心数据类定义}
+
+\begin{lstlisting}[style=cmplain]
+# classmind/models.py 全文
+from __future__ import annotations
+from dataclasses import asdict, dataclass, field
+from typing import Any
+
+
+@dataclass(frozen=True)
+class TimeSlot:
+    id: str
+    day: str
+    period: str
+    order: int
+
+
+@dataclass(frozen=True)
+class Teacher:
+    id: str
+    name: str
+    qualifications: tuple = ()
+    unavailable: tuple = ()
+    preferred_slots: tuple = ()
+
+
+@dataclass(frozen=True)
+class Room:
+    id: str
+    name: str
+    campus: str
+    capacity: int
+    equipment: tuple = ()
+    unavailable: tuple = ()
+
+
+@dataclass(frozen=True)
+class ClassGroup:
+    id: str
+    name: str
+    size: int
+    unavailable: tuple = ()
+    preferred_slots: tuple = ()
+
+
+@dataclass(frozen=True)
+class CourseRequest:
+    id: str
+    name: str
+    subject: str
+    class_id: str
+    sessions: int
+    qualified_teacher_ids: tuple = ()
+    required_equipment: tuple = ()
+    allowed_slots: tuple = ()
+
+
+@dataclass(frozen=True)
+class Problem:
+    time_slots: tuple
+    teachers: tuple
+    rooms: tuple
+    classes: tuple
+    courses: tuple
+
+
+@dataclass(frozen=True)
+class ScheduledLesson:
+    lesson_id: str
+    course_id: str
+    course_name: str
+    class_id: str
+    class_name: str
+    teacher_id: str
+    teacher_name: str
+    room_id: str
+    room_name: str
+    slot_id: str
+    day: str
+    period: str
+
+    def to_dict(self):
+        return asdict(self)
+
+
+@dataclass
+class SolveResult:
+    status: str
+    schedule: list = field(default_factory=list)
+    conflicts: list = field(default_factory=list)
+    metrics: dict = field(default_factory=dict)
+
+    def to_dict(self):
+        return {
+            "status": self.status,
+            "metrics": self.metrics,
+            "conflicts": self.conflicts,
+            "schedule": [item.to_dict() for item in self.schedule],
+        }
+\end{lstlisting}
+
+\subsection*{附录 B：演示数据示例（节选）}
+\addcontentsline{toc}{subsection}{附录 B：演示数据示例（节选）}
+
+\begin{lstlisting}[style=cmjson]
+// data/demo.json 完整内容（节选）
+{
+  "time_slots": [
+    {"id":"MON_0800","day":"周一","period":"08:00-09:30","order":1},
+    {"id":"MON_1000","day":"周一","period":"10:00-11:30","order":2},
+    {"id":"MON_1330","day":"周一","period":"13:30-15:00","order":3},
+    {"id":"MON_1530","day":"周一","period":"15:30-17:00","order":4},
+    {"id":"FRI_1530","day":"周五","period":"15:30-17:00","order":20}
+  ],
+  "teachers": [
+    {"id":"T01","name":"张老师","qualifications":["数学"],
+     "unavailable":["WED_1000"],
+     "preferred_slots":["MON_0800","TUE_0800","THU_1000"]},
+    {"id":"T02","name":"李老师","qualifications":["数学","物理"],
+     "unavailable":["TUE_1000"],
+     "preferred_slots":["MON_1330","WED_1330","FRI_0800"]},
+    {"id":"T03","name":"王老师","qualifications":["英语"],
+     "unavailable":["FRI_1530"],
+     "preferred_slots":["TUE_1000","THU_1330","FRI_1000"]},
+    {"id":"T04","name":"赵老师","qualifications":["物理"],
+     "unavailable":["MON_0800"],
+     "preferred_slots":["MON_1330","WED_1330","FRI_0800"]}
+  ],
+  "rooms": [
+    {"id":"R101","name":"思源教室","campus":"鼓楼校区",
+     "capacity":30,"equipment":["投影","白板"]},
+    {"id":"R201","name":"致远教室","campus":"鼓楼校区",
+     "capacity":45,"equipment":["投影","白板","实验台"],
+     "unavailable":["FRI_1330"]},
+    {"id":"R301","name":"博雅教室","campus":"仙林校区",
+     "capacity":25,"equipment":["投影","白板"]}
+  ],
+  "classes": [
+    {"id":"C01","name":"高一数学A班","size":28,
+     "preferred_slots":["MON_0800","WED_1000","FRI_1330"]},
+    {"id":"C02","name":"高一英语A班","size":22,
+     "unavailable":["MON_0800"],
+     "preferred_slots":["TUE_1000","THU_1330","FRI_1000"]},
+    {"id":"C03","name":"高二物理A班","size":35,
+     "preferred_slots":["MON_1330","WED_1330","FRI_0800"]},
+    {"id":"C04","name":"初三数学冲刺班","size":24,
+     "unavailable":["FRI_1530","THU_1530"],
+     "preferred_slots":["TUE_0800","THU_1000","FRI_1000"]}
+  ],
+  "courses": [
+    {"id":"CR01","name":"高一数学提升","subject":"数学",
+     "class_id":"C01","sessions":2,
+     "qualified_teacher_ids":["T01","T02"],
+     "required_equipment":["投影"],
+     "allowed_slots":["MON_0800","WED_1000","FRI_1330"]},
+    {"id":"CR02","name":"高一英语阅读","subject":"英语",
+     "class_id":"C02","sessions":2,
+     "qualified_teacher_ids":["T03"],
+     "required_equipment":["投影"],
+     "allowed_slots":["TUE_1000","THU_1330","FRI_1000"]},
+    {"id":"CR03","name":"高二物理实验","subject":"物理",
+     "class_id":"C03","sessions":2,
+     "qualified_teacher_ids":["T02","T04"],
+     "required_equipment":["实验台"],
+     "allowed_slots":["MON_1330","WED_1330","FRI_0800"]},
+    {"id":"CR04","name":"初三数学冲刺","subject":"数学",
+     "class_id":"C04","sessions":2,
+     "qualified_teacher_ids":["T01","T02"],
+     "required_equipment":["白板"],
+     "allowed_slots":["TUE_0800","THU_1000","FRI_1000"]}
+  ]
+}
+\end{lstlisting}
+
+\subsection*{附录 C：API 接口详细定义}
+\addcontentsline{toc}{subsection}{附录 C：API 接口详细定义}
+
+\subsubsection*{C.1 GET /api/health}
+
+\textbf{用途：}健康检查。 \textbf{请求：}无。
+
+\begin{lstlisting}[style=cmjson]
+{
+  "status": "ok",
+  "service": "ClassMind",
+  "solver": "OR-Tools CP-SAT"
+}
+\end{lstlisting}
+
+\subsubsection*{C.2 GET /api/plans}
+
+\textbf{用途：}获取 3 套候选方案。 \textbf{请求：}无。
+
+\begin{lstlisting}[style=cmjson]
+{
+  "plans": [
+    {
+      "id": "student",
+      "name": "学生体验优先",
+      "status": "OPTIMAL",
+      "metrics": {
+        "solve_time_ms": 38.7,
+        "lesson_count": 8,
+        "hard_conflict_count": 0,
+        "teacher_count": 4,
+        "room_count": 3,
+        "strategy": "student",
+        "objective_value": 137.0
+      },
+      "conflicts": [],
+      "schedule": [ "...8 条课次..." ],
+      "scorecard": {
+        "hard_conflicts": 0,
+        "student_preference_rate": 100.0,
+        "teacher_preference_rate": 75.0,
+        "capacity_fit_rate": 90.3,
+        "stability_variance": 0.45,
+        "overall_score": 89.1
+      }
+    }
+  ]
+}
+\end{lstlisting}
+
+\subsubsection*{C.3 GET /api/dashboard}
+
+\textbf{用途：}获取决策驾驶舱所需数据。 \textbf{响应：}同单个 \code{SolveResult}，额外含 \code{teacher\_load} 字段。
+
+\subsubsection*{C.4 POST /api/solve}
+
+\textbf{用途：}对自定义业务数据求解。 \textbf{请求体：}与 \code{data/demo.json} 同结构，可选 \code{strategy} 字段。 \textbf{响应：}单个 \code{SolveResult}。
+
+\subsubsection*{C.5 POST /api/reschedule}
+
+\textbf{用途：}教师请假最小影响调课。
+
+\begin{lstlisting}[style=cmjson]
+{ "teacher_id": "T01", "slot_id": "MON_0800" }
+\end{lstlisting}
+
+\begin{lstlisting}[style=cmjson]
+{
+  "request": {"type":"teacher_leave","teacher_id":"T01",
+              "slot_id":"MON_0800"},
+  "before": { "status":"OPTIMAL", "schedule":[ "..." ] },
+  "after":  { "status":"OPTIMAL", "schedule":[ "..." ] },
+  "diff": {
+    "change_count": 2,
+    "changes": [
+      {
+        "lesson_id": "CR01-1",
+        "before": {"teacher_id":"T01","room_id":"R101",
+                   "slot_id":"MON_0800"},
+        "after":  {"teacher_id":"T02","room_id":"R101",
+                   "slot_id":"MON_0800"}
+      }
+    ]
+  },
+  "impact": {
+    "changed_lessons": 2,
+    "affected_classes": ["高一数学A班"],
+    "affected_class_count": 1
+  }
+}
+\end{lstlisting}
+
+\subsection*{附录 D：完整源码}
+\addcontentsline{toc}{subsection}{附录 D：完整源码}
+
+完整源码托管在 GitHub：
+
+\begin{center}
+\code{github.com/Lenny-lab/classmind-scheduler}
+\end{center}
+
+本附录给出 \code{solver.py} 核心算法完整代码以供评审查阅，
+其余源码（\code{api.py / service.py / validator.py / io.py /
+models.py / cli.py}）请参见上述仓库的 \code{classmind/} 目录。
+
+\begin{lstlisting}[style=cmplain]
+# classmind/solver.py 关键算法
+from ortools.sat.python import cp_model
+
+
+STRATEGY_WEIGHTS = {
+    "student":    {"preference": 10, "stability": 2,
+                    "efficiency": 1, "change": 0,   "compactness": 3},
+    "teacher":    {"preference": 2,  "stability": 10,
+                    "efficiency": 1, "change": 0,   "compactness": 3},
+    "efficiency": {"preference": 1,  "stability": 2,
+                    "efficiency": 10,"change": 0,   "compactness": 3},
+    "balanced":   {"preference": 5,  "stability": 5,
+                    "efficiency": 5, "change": 0,   "compactness": 3},
+    "reschedule": {"preference": 1,  "stability": 1,
+                    "efficiency": 1, "change": 100, "compactness": 0},
+}
+
+
+def _per_lesson_soft_costs(problem, variables, weights,
+                           baseline_by_lesson, strategy):
+    teachers = {x.id: x for x in problem.teachers}
+    rooms = {x.id: x for x in problem.rooms}
+    classes = {x.id: x for x in problem.classes}
+    slots = {x.id: x for x in problem.time_slots}
+
+    costs = []
+    for (lesson_id, teacher_id, room_id, slot_id), variable in variables.items():
+        course = next(x for x in problem.courses
+                      if x.id == lesson_id.rsplit("-", 1)[0])
+        group = classes[course.class_id]
+
+        group_hit = int(bool(group.preferred_slots)
+                        and slot_id not in group.preferred_slots)
+        teacher_hit = int(bool(teachers[teacher_id].preferred_slots)
+                          and slot_id not in teachers[teacher_id].preferred_slots)
+        preference_cost = group_hit + teacher_hit
+
+        capacity = max(1, rooms[room_id].capacity)
+        capacity_waste = max(0, capacity - group.size) / capacity
+
+        max_order = max(1, max(s.order for s in problem.time_slots))
+        compactness_cost = (slots[slot_id].order - 1) / max_order
+
+        baseline = baseline_by_lesson.get(lesson_id)
+        change_cost = 1 if (strategy == "reschedule"
+                            and baseline != (teacher_id, room_id, slot_id)) else 0
+
+        cost_expr = (
+            weights["preference"] * preference_cost
+            + weights["efficiency"] * capacity_waste
+            + weights["compactness"] * compactness_cost
+            + weights["change"] * change_cost
+        )
+        costs.append((cost_expr, variable))
+    return costs
+
+
+def _stability_cost(problem, variables, weights, n_slots, model):
+    if weights["stability"] == 0 or n_slots == 0:
+        return 0, 0
+
+    teachers = list(problem.teachers)
+    days = sorted({s.day for s in problem.time_slots})
+    per_day_teacher_count = defaultdict(list)
+    for (lesson_id, teacher_id, room_id, slot_id), variable in variables.items():
+        day = next(s.day for s in problem.time_slots if s.id == slot_id)
+        per_day_teacher_count[(teacher_id, day)].append(variable)
+
+    penalty_expr = []
+    expected_per_day = max(1, n_slots // max(1, len(teachers) * len(days)))
+
+    for teacher in teachers:
+        for day in days:
+            exprs = per_day_teacher_count.get((teacher.id, day), [])
+            if not exprs:
+                continue
+            daily_count = sum(exprs)
+            dev_pos = model.new_int_var(0, len(exprs),
+                                         f"dev_pos_{teacher.id}_{day}")
+            dev_neg = model.new_int_var(0, len(exprs),
+                                         f"dev_neg_{teacher.id}_{day}")
+            model.add(dev_pos >= daily_count - expected_per_day)
+            model.add(dev_neg >= expected_per_day - daily_count)
+            penalty_expr.append((dev_pos + dev_neg))
+
+    if not penalty_expr:
+        return 0, 0
+    return 1, weights["stability"] * sum(penalty_expr)
+
+
+def solve_schedule(problem, time_limit_seconds=15.0,
+                   strategy="balanced", baseline=None):
+    data_errors = validate_problem(problem)
+    if data_errors:
+        return SolveResult(status="INVALID_DATA", conflicts=data_errors)
+
+    if strategy not in STRATEGY_WEIGHTS:
+        return SolveResult(status="INVALID_DATA",
+                           conflicts=[f"未知策略: {strategy}"])
+    weights = STRATEGY_WEIGHTS[strategy]
+
+    teachers = {x.id: x for x in problem.teachers}
+    rooms = {x.id: x for x in problem.rooms}
+    classes = {x.id: x for x in problem.classes}
+    slots = {x.id: x for x in problem.time_slots}
+    slot_ids = [x.id for x in sorted(problem.time_slots,
+                                      key=lambda s: s.order)]
+
+    lesson_specs = [
+        (f"{course.id}-{session + 1}", course)
+        for course in problem.courses
+        for session in range(course.sessions)
+    ]
+    model = cp_model.CpModel()
+    variables = {}
+    lesson_vars = defaultdict(list)
+
+    for lesson_id, course in lesson_specs:
+        group = classes[course.class_id]
+        allowed = set(course.allowed_slots or slot_ids)
+        for teacher_id in course.qualified_teacher_ids:
+            teacher = teachers[teacher_id]
+            if course.subject not in teacher.qualifications:
+                continue
+            for room in problem.rooms:
+                if (room.capacity < group.size
+                        or not set(course.required_equipment)
+                            .issubset(room.equipment)):
+                    continue
+                for slot_id in slot_ids:
+                    if slot_id not in allowed:
+                        continue
+                    if slot_id in teacher.unavailable:
+                        continue
+                    if slot_id in room.unavailable:
+                        continue
+                    if slot_id in group.unavailable:
+                        continue
+                    key = (lesson_id, teacher_id, room.id, slot_id)
+                    variables[key] = model.new_bool_var(
+                        "x_" + "_".join(key))
+                    lesson_vars[lesson_id].append(variables[key])
+
+    impossible = [lid for lid, _ in lesson_specs if not lesson_vars[lid]]
+    if impossible:
+        return SolveResult(status="INFEASIBLE",
+                           conflicts=[f"课次无任何可行: {x}"
+                                      for x in impossible])
+
+    for lesson_id, _ in lesson_specs:
+        model.add_exactly_one(lesson_vars[lesson_id])
+    for teacher_id in teachers:
+        for slot_id in slot_ids:
+            model.add_at_most_one(
+                [v for (l, t, r, s), v in variables.items()
+                 if t == teacher_id and s == slot_id])
+    for room_id in rooms:
+        for slot_id in slot_ids:
+            model.add_at_most_one(
+                [v for (l, t, r, s), v in variables.items()
+                 if r == room_id and s == slot_id])
+    for class_id in classes:
+        course_ids = {x.id for x in problem.courses
+                      if x.class_id == class_id}
+        for slot_id in slot_ids:
+            model.add_at_most_one(
+                [v for (l, t, r, s), v in variables.items()
+                 if l.rsplit("-", 1)[0] in course_ids and s == slot_id])
+    for course in problem.courses:
+        lesson_ids = [f"{course.id}-{i + 1}"
+                      for i in range(course.sessions)]
+        for slot_id in slot_ids:
+            model.add_at_most_one(
+                [v for (l, t, r, s), v in variables.items()
+                 if l in lesson_ids and s == slot_id])
+
+    baseline_by_lesson = {x.lesson_id: (x.teacher_id, x.room_id, x.slot_id)
+                          for x in (baseline or [])}
+    per_lesson = _per_lesson_soft_costs(problem, variables, weights,
+                                        baseline_by_lesson, strategy)
+    objective_terms = [expr * var for expr, var in per_lesson]
+    stability_active, stability_expr = _stability_cost(
+        problem, variables, weights, len(lesson_specs), model)
+    if stability_active:
+        objective_terms.append(stability_expr)
+    model.minimize(sum(objective_terms))
+
+    solver = cp_model.CpSolver()
+    solver.parameters.max_time_in_seconds = time_limit_seconds
+    solver.parameters.num_search_workers = 8
+    solver.parameters.random_seed = 42
+    started = perf_counter()
+    status_code = solver.solve(model)
+    elapsed_ms = round((perf_counter() - started) * 1000, 2)
+    if status_code not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+        return SolveResult(status="INFEASIBLE",
+                           conflicts=["当前硬约束组合无可行课表"],
+                           metrics={"solve_time_ms": elapsed_ms})
+
+    courses = {x.id: x for x in problem.courses}
+    schedule = []
+    for (lesson_id, teacher_id, room_id, slot_id), variable in variables.items():
+        if solver.value(variable) != 1:
+            continue
+        course = courses[lesson_id.rsplit("-", 1)[0]]
+        teacher = teachers[teacher_id]
+        room = rooms[room_id]
+        slot = slots[slot_id]
+        group = classes[course.class_id]
+        schedule.append(ScheduledLesson(
+            lesson_id=lesson_id, course_id=course.id,
+            course_name=course.name,
+            class_id=group.id, class_name=group.name,
+            teacher_id=teacher.id, teacher_name=teacher.name,
+            room_id=room.id, room_name=room.name,
+            slot_id=slot.id, day=slot.day, period=slot.period,
+        ))
+    schedule.sort(key=lambda x: (slots[x.slot_id].order,
+                                  x.room_id, x.lesson_id))
+    conflicts = validate_schedule(problem, schedule)
+    return SolveResult(
+        status="OPTIMAL" if status_code == cp_model.OPTIMAL else "FEASIBLE",
+        schedule=schedule,
+        conflicts=conflicts,
+        metrics={
+            "solve_time_ms": elapsed_ms,
+            "lesson_count": len(schedule),
+            "hard_conflict_count": len(conflicts),
+            "teacher_count": len({x.teacher_id for x in schedule}),
+            "room_count": len({x.room_id for x in schedule}),
+            "strategy": strategy,
+            "objective_value": round(solver.objective_value, 2),
+        },
+    )
+
+
+def solve_portfolio(problem, time_limit_seconds=15.0):
+    return {
+        strategy: solve_schedule(problem, time_limit_seconds, strategy)
+        for strategy in ("student", "teacher", "efficiency")
+    }
+\end{lstlisting}
+
+\subsection*{附录 E：术语表}
+\addcontentsline{toc}{subsection}{附录 E：术语表}
+
+\begin{table}[h]
+\centering
+\caption{术语表}
+\label{tab:glossary}
+\small
+\begin{tabularx}{\textwidth}{l X}
+\toprule
+\textbf{术语} & \textbf{说明} \\
+\midrule
+CP-SAT
+  & Constraint Programming - SAT，Google OR-Tools 中的混合求解引擎，
+结合了约束传播、SAT 冲突学习与线性规划松弛。\\
+CP & Constraint Programming，约束规划。\\
+CSP & Constraint Satisfaction Problem，约束满足问题。\\
+SAT & Boolean Satisfiability Problem，布尔可满足性问题。\\
+OR-Tools & Google 开源的运筹学工具包，Apache 2.0 协议。\\
+硬约束
+  & 必须严格满足的约束，违反则方案无效（如"教师同 0 冲突"）。\\
+软目标
+  & 可以被违反但应尽量满足的目标（如"学生偏好尽量命中"）。\\
+策略权重
+  & 不同维度的软目标在总目标中的相对重要性（0--10）。\\
+策略
+  & 一组策略权重的命名（balanced / student / teacher / efficiency / reschedule）。\\
+稳定性方差
+  & 教师日均课次的总体方差，越低表示越均匀。\\
+调课
+  & 在原方案基础上做最小影响的修改。\\
+决策变量
+  & 求解器可以控制的变量（如 $x_{l,t,r,s}$）。\\
+预筛选
+  & 在生成决策变量前就剔除明显不可行的组合。\\
+辅助变量
+  & 求解器自动引入的额外变量，用于表达复杂约束（如 \code{dev\_pos, dev\_neg}）。\\
+归约
+  & Reduction，把非线性目标近似为线性目标（如一阶泰勒）。\\
+教务老师
+  & K12 培训机构中负责排课的老师。\\
+驾驶舱
+  & Dashboard，集中展示关键指标的页面。\\
+\bottomrule
+\end{tabularx}
+\end{table}

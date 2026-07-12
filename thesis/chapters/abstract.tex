@@ -1,0 +1,70 @@
+% 中文摘要与英文摘要分别成页
+\clearpage
+\phantomsection
+\addcontentsline{toc}{section}{摘要}
+\begin{center}
+  {\heiti\zihao{2} 摘\quad 要}
+\end{center}
+\vspace{1.2em}
+
+个性化辅导排课需要同时协调教师资质、班级可用时间、教室容量、设备条件
+及临时变更等多类约束。依赖电子表格和人工核对的传统方式难以在业务变化
+频繁时稳定保证无冲突，也不易解释不同排课方案之间的取舍。为此，本课题
+拟研究并实现一套面向 K12 一对一及小班辅导场景的智能排课决策系统
+ClassMind。
+
+课题以约束规划和 OR-Tools CP-SAT 为核心，将“课次完整安排、教师/教室/
+班级同一时段不冲突、教师资质匹配、教室容量及设备满足”等条件建模为硬
+约束，将学生偏好、教师偏好、资源利用、日负载均衡和调课变更数建模为可
+配置软目标。系统拟采用“业务数据层—约束求解层—独立校验层—应用交互层”
+四层架构，形成候选方案生成、评分解释、异常诊断和最小影响调课的闭环，
+并为第二阶段接入飞书多维表格、消息卡片和审批流程预留接口。
+
+目前已完成可运行原型，包括数据模型、CP-SAT 求解器、本地 REST API、
+四个功能页面和自动化测试。后续研究将围绕真实规模数据下的求解性能、
+多目标权重敏感性、局部重排稳定性、结果可解释性和飞书场景集成展开。
+预期成果包括一套可复现实验的智能排课原型、约束与评价指标体系、飞书
+集成方案以及完整的技术文档。
+
+\vspace{1em}
+\noindent\textbf{关键词：}智能排课；约束规划；CP-SAT；多目标优化；
+最小影响调课；可解释决策；飞书应用
+
+\clearpage
+\phantomsection
+\addcontentsline{toc}{section}{Abstract}
+\begin{center}
+  {\bfseries\zihao{2} Abstract}
+\end{center}
+\vspace{1.2em}
+
+Personalized tutoring timetabling must coordinate teacher qualifications,
+class availability, room capacity, equipment requirements, and frequent
+schedule changes. Spreadsheet-based workflows rely heavily on manual checks,
+making it difficult to guarantee conflict-free schedules or explain the
+trade-offs among alternatives. This project proposes ClassMind, an intelligent
+timetabling decision system for one-to-one and small-group K12 tutoring.
+
+The project adopts constraint programming with OR-Tools CP-SAT. Lesson
+completion, teacher-room-class exclusivity, qualification matching, capacity,
+and equipment requirements are modeled as hard constraints. Student and
+teacher preferences, resource utilization, workload balance, and schedule
+changes are modeled as configurable soft objectives. The proposed architecture
+contains four layers: business data, constraint solving, independent
+validation, and application interaction. It supports candidate generation,
+score-based explanation, infeasibility diagnosis, and minimum-impact
+rescheduling, while reserving interfaces for Feishu Base, message cards, and
+approval workflows.
+
+A runnable prototype has been completed, including the data model, CP-SAT
+solver, local REST APIs, four functional pages, and automated tests. Subsequent
+research will evaluate scalability, weight sensitivity, rescheduling stability,
+interpretability, and Feishu integration. Expected deliverables include a
+reproducible scheduling prototype, a constraint and evaluation framework, a
+Feishu integration plan, and complete technical documentation.
+
+\vspace{1em}
+\noindent\textbf{Keywords:} Intelligent Timetabling; Constraint Programming;
+CP-SAT; Multi-objective Optimization; Minimum-impact Rescheduling;
+Explainable Decision; Feishu Application
+\clearpage

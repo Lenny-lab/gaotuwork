@@ -1,0 +1,48 @@
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.vendor/
+.server.pid
+
+# 临时文件
+tmp/
+*.tmp
+*.bak
+*.swp
+.DS_Store
+Thumbs.db
+
+# 日志和运行产物
+server.*.log
+output/*.pid
+output/*.log
+output/*.json
+output/*.html
+output/**/*.log
+output/**/*.html
+!output/.gitkeep
+
+# 凭据和本地配置
+.env
+.env.local
+*.local.json
+
+# 调试/缓存
+.vscode/
+.idea/
+
+# 数据/模型
+data/cache/
+data/*.db
+data/*.sqlite
+data/*.sqlite3
+classmind/__pycache__/
+classmind/*/__pycache__/
+classmind/.cache/
+classmind/data/cache/
+classmind/data/*.db
+classmind/logs/
+classmind/*.log

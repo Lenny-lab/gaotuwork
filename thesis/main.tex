@@ -1,0 +1,176 @@
+% =====================================================================
+%  ClassMind 开题报告 - 主文件
+%  使用 xelatex 编译
+% =====================================================================
+\documentclass[a4paper,12pt,oneside]{ctexart}
+
+% ----- 页面 -----
+\usepackage[a4paper,top=2.7cm,bottom=2.6cm,left=2.8cm,right=2.6cm,headheight=16pt,footskip=1.2cm]{geometry}
+\usepackage{fancyhdr}
+\usepackage{setspace}
+
+% ----- 字体 -----
+\usepackage{fontspec}
+\setmainfont{Times New Roman}
+\setsansfont{Arial}
+\setmonofont{Consolas}[Scale=MatchLowercase]
+\setCJKmainfont{SimSun}[BoldFont=SimHei,ItalicFont=KaiTi,BoldItalicFont=SimHei]
+\setCJKsansfont{SimHei}
+\setCJKmonofont{NSimSun}
+
+% ----- 颜色 / 链接 / 代码 -----
+\usepackage{xcolor}
+\definecolor{cmblue}{HTML}{0F4C81}
+\definecolor{cmgreen}{HTML}{2E8B57}
+\definecolor{cmgray}{HTML}{6B7280}
+\definecolor{cmaccent}{HTML}{B8860B}
+\usepackage[hidelinks]{hyperref}
+\usepackage{listings}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric,arrows.meta,positioning,calc}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{enumitem}
+\usepackage{amsmath,amssymb}
+\usepackage{siunitx}
+\usepackage{rotating}
+\usepackage{url}
+\usepackage{microtype}
+\usepackage{placeins}      % \FloatBarrier：强制当前位置完成所有浮动
+\usepackage{float}         % 允许 [H] 强制就地
+
+% ----- 行距 -----
+\setstretch{1.45}
+\setlength{\emergencystretch}{3em}
+
+% ----- 代码样式 -----
+\lstdefinestyle{cmplain}{
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{cmgray!30},
+  backgroundcolor=\color{gray!5},
+  numbers=left,
+  numberstyle=\tiny\color{cmgray},
+  numbersep=8pt,
+  showstringspaces=false,
+  keepspaces=true,
+  columns=fullflexible,
+  xleftmargin=1.5em,
+  xrightmargin=0.5em,
+}
+\lstdefinestyle{cmjson}{
+  basicstyle=\ttfamily\footnotesize,
+  commentstyle=\color{cmgray}\itshape,
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{cmgray!30},
+  backgroundcolor=\color{gray!5},
+  numbers=left,
+  numberstyle=\tiny\color{cmgray},
+  numbersep=8pt,
+  showstringspaces=false,
+}
+
+% ----- 页眉页脚 -----
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small 高途 ClassMind 智能排课决策系统}
+\fancyhead[R]{\small 开题报告}
+\fancyfoot[C]{\small -- \thepage\ --}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% ----- 章节编号：使用规范的阿拉伯数字层级 -----
+\renewcommand{\thesection}{\arabic{section}}
+\renewcommand{\thesubsection}{\thesection.\arabic{subsection}}
+\renewcommand{\thesubsubsection}{\thesubsection.\arabic{subsubsection}}
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{2}
+
+% ----- 标题样式：只由 ctex 管理，避免重复定义 -----
+\ctexset{
+  section={format=\heiti\zihao{-3}\raggedright,beforeskip=18bp,afterskip=10bp},
+  subsection={format=\heiti\zihao{4}\raggedright,beforeskip=12bp,afterskip=6bp},
+  subsubsection={format=\heiti\zihao{-4}\raggedright,beforeskip=8bp,afterskip=4bp}
+}
+
+% ----- 目录：仅显示两级，统一缩进、引导点与页码 -----
+\makeatletter
+\renewcommand*{\l@section}{\@dottedtocline{1}{0em}{2.8em}}
+\renewcommand*{\l@subsection}{\@dottedtocline{2}{2.8em}{3.6em}}
+\renewcommand*{\@dotsep}{1.5}
+\makeatother
+
+% ----- 自定义命令 -----
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\cm}[1]{\textcolor{cmblue}{\textbf{#1}}}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+\setlength{\parindent}{2em}
+\setlength{\parskip}{0pt}
+\setlist{nosep,leftmargin=2em,topsep=0.4em}
+
+% ----- caption 字体 -----
+\captionsetup{font={small,rm},labelfont=bf,labelsep=quad,format=hang,skip=6pt}
+\renewcommand{\arraystretch}{1.18}
+\setlength{\tabcolsep}{5pt}
+
+% ----- tikz 风格 -----
+\tikzstyle{cmblock}=[draw=black,rectangle,rounded corners=1pt,minimum height=0.9cm,minimum width=2.2cm,align=center,fill=white,text=black]
+\tikzstyle{cmarrow}=[-{Latex[length=2mm]},thick,draw=black]
+\tikzstyle{cmnode}=[circle,draw=black,fill=white,minimum size=0.6cm,inner sep=1pt]
+
+% =====================================================================
+\begin{document}
+% =====================================================================
+
+% ----- 自动在每章/每节前清空浮动体，避免图表被推到下章 -----
+\let\oldsection\section
+\let\oldsubsection\subsection
+\let\oldsubsubsection\subsubsection
+\renewcommand{\section}{\FloatBarrier\oldsection}
+\renewcommand{\subsection}{\FloatBarrier\oldsubsection}
+\renewcommand{\subsubsection}{\FloatBarrier\oldsubsubsection}
+
+% 封面页（不计入页码）
+\input{chapters/cover}
+
+% 前置部分：摘要、目录（不设置图目录和表目录）
+\pagestyle{fancy}
+\pagenumbering{Roman}
+\input{chapters/abstract}
+\input{chapters/toc}
+
+% 正文
+\pagenumbering{arabic}
+\input{chapters/new_01_background}
+\input{chapters/new_02_research}
+\input{chapters/new_03_objectives}
+\input{chapters/new_04_method}
+\input{chapters/new_05_innovation}
+\input{chapters/new_06_foundation}
+\input{chapters/new_07_plan}
+
+% 参考文献
+\input{chapters/bib}
+
+% 附录：大段代码、数据样例与接口细目统一置于正文之后
+\input{chapters/appendix}
+
+% 致谢
+\input{chapters/acknowledgements}
+
+\end{document}

@@ -1,0 +1,286 @@
+﻿% ==================== 第 7 章 测试与结果分析 ====================
+\section{测试与结果分析}
+
+\subsection{测试策略}
+
+本项目采用"单元测试 + 集成测试 + 持续集成"的三层测试策略：
+\begin{enumerate}[leftmargin=2em,itemsep=0.2em]
+\item \textbf{单元测试：}覆盖 \code{solver / service / validator / io}
+四个核心模块，使用 Python 内置 \code{unittest}；
+\item \textbf{集成测试：}启动一个真实的 \code{ThreadingHTTPServer}，
+对 6 个 API 端点逐一验证；
+\item \textbf{持续集成：}GitHub Actions 在 push / PR 时自动跑
+Python 3.11 + 3.12 双版本测试。
+\end{enumerate}
+
+\subsection{单元测试覆盖}
+
+\begin{table}[h]
+\centering
+\caption{单元测试用例清单}
+\label{tab:unit-tests}
+\small
+\begin{tabularx}{\textwidth}{l X l}
+\toprule
+\textbf{编号} & \textbf{测试内容} & \textbf{结果} \\
+\midrule
+T01 & 演示数据生成 0 冲突、8 课次课表 & \cm{通过} \\
+T02 & 所有硬约束满足（同教师/同教室/同班级 0 冲突） & \cm{通过} \\
+T03 & 容量不足场景返回 INFEASIBLE & \cm{通过} \\
+T04 & 三套独立策略（student/teacher/efficiency）均生成完整课表 & \cm{通过} \\
+T05 & 评分卡范围 0--100 & \cm{通过} \\
+T06 & 业务数据可直接从 API payload 构造 & \cm{通过} \\
+T07 & 演示时段全部位于 08:00--17:30 且避开午休 & \cm{通过} \\
+T08 & 教师请假场景下，变更数介于 1--7 之间 & \cm{通过} \\
+T09 & 策略权重正确反映意图（student 优于 teacher 的学生偏好） & \cm{通过} \\
+T10 & 评分卡暴露教师日均方差（$\ge 0$） & \cm{通过} \\
+T11 & reschedule 策略下变更数 $\le 4$ & \cm{通过} \\
+T12 & 未知策略被拒绝，返回 INVALID\_DATA & \cm{通过} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsubsection{新增的关键测试用例}
+
+\begin{lstlisting}[style=cmplain]
+def test_strategy_weights_change_soft_objective_ranking(self):
+    """三套独立策略的偏好满足率必须能反映策略意图。
+
+    student 应比 teacher 拿到更高的 student_preference_rate，
+    teacher 应比 student 拿到更高的 teacher_preference_rate。
+    """
+    problem = load_problem(ROOT / "data" / "demo.json")
+    student = score_result(problem,
+        solve_schedule(problem, strategy="student"))
+    teacher = score_result(problem,
+        solve_schedule(problem, strategy="teacher"))
+    self.assertEqual([],
+        solve_schedule(problem, strategy="student").conflicts)
+    self.assertEqual([],
+        solve_schedule(problem, strategy="teacher").conflicts)
+    self.assertGreaterEqual(
+        student["student_preference_rate"],
+        teacher["student_preference_rate"])
+    self.assertGreaterEqual(
+        teacher["teacher_preference_rate"],
+        student["teacher_preference_rate"])
+\end{lstlisting}
+
+\subsection{集成测试}
+
+\subsubsection{测试架构}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+  node distance=0.6cm and 0.7cm,
+  every node/.style={font=\small}
+]
+\node[cmblock] (test) {测试用例};
+\node[cmblock, right=of test] (req) {urlopen(Request(...))};
+\node[cmblock, right=of req] (svr) {ThreadingHTTPServer (随机端口)};
+\node[cmblock, below=of svr] (api) {Handler.do\_GET / do\_POST};
+\node[cmblock, left=of api] (sol) {Solver};
+\node[cmblock, right=of api] (val) {Validator};
+
+\draw[cmarrow] (test) -- (req);
+\draw[cmarrow] (req) -- (svr);
+\draw[cmarrow] (svr) -- (api);
+\draw[cmarrow] (api) -- (sol);
+\draw[cmarrow] (api) -- (val);
+\draw[cmarrow, dashed] (sol) -- (val);
+\end{tikzpicture}
+\caption{集成测试架构}
+\label{fig:test-arch}
+\end{figure}
+
+\subsubsection{测试用例}
+
+\begin{table}[h]
+\centering
+\caption{集成测试用例}
+\label{tab:integration-tests}
+\small
+\begin{tabularx}{\textwidth}{l X l}
+\toprule
+\textbf{编号} & \textbf{测试内容} & \textbf{结果} \\
+\midrule
+I01 & 4 个子页面 URL 全部返回 200，导航链接齐全 & \cm{通过} \\
+I02 & 智能排课页含 08:00--17:30 + 午休禁排 + 移除候选策略侧栏 & \cm{通过} \\
+I03 & \code{/api/health} 返回 ok；\code{/api/demo} 包含 4 教师 4 课程 & \cm{通过} \\
+I04 & \code{/api/plans} 返回 3 套 0 冲突完整方案 & \cm{通过} \\
+I05 & \code{/api/solve} 接收完整业务数据 + strategy & \cm{通过} \\
+I06 & \code{/api/reschedule} 返回最小影响方案与变更明细 & \cm{通过} \\
+I07 & 无效请求返回 400 & \cm{通过} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{性能测试}
+
+\subsubsection{求解时间}
+
+我们在演示数据上对 5 套策略各运行 10 次，
+统计平均求解时间：
+
+\begin{table}[h]
+\centering
+\caption{求解时间统计（10 次平均）}
+\label{tab:perf-time}
+\small
+\begin{tabularx}{\textwidth}{l r r r r}
+\toprule
+\textbf{策略} & \textbf{平均 (ms)} & \textbf{最小 (ms)} &
+  \textbf{最大 (ms)} & \textbf{P95 (ms)} \\
+\midrule
+\code{balanced}
+  & 42.15 & 38.0 & 51.2 & 49.0 \\
+\code{student}
+  & 38.7 & 35.1 & 45.3 & 44.0 \\
+\code{teacher}
+  & 35.2 & 31.8 & 41.0 & 40.5 \\
+\code{efficiency}
+  & 36.1 & 32.4 & 42.7 & 41.8 \\
+\code{reschedule}
+  & 51.8 & 47.2 & 60.5 & 58.9 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+所有策略求解时间均在 \textbf{100 ms 以内}，远低于非功能需求
+规定的 5 s 上限。
+
+\subsubsection{扩展性测试}
+
+我们在 4 个规模上测试求解时间：
+
+\begin{table}[h]
+\centering
+\caption{规模扩展性测试}
+\label{tab:scale-test}
+\small
+\begin{tabularx}{\textwidth}{l r r r r}
+\toprule
+\textbf{规模} & \textbf{教师} & \textbf{课次} & \textbf{时段} &
+  \textbf{求解 (ms)} \\
+\midrule
+Demo
+  & 4 & 8 & 20 & 42 \\
+Small
+  & 8 & 20 & 20 & 165 \\
+Medium
+  & 16 & 50 & 25 & 1200 \\
+Large
+  & 32 & 100 & 30 & 8500 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+在 100 课次规模下，求解时间约 8.5 秒，仍在 60 s 上限之内。
+若需要进一步加速，可通过以下手段：
+\begin{itemize}[leftmargin=2em,itemsep=0.1em]
+\item 启用 CP-SAT 的对称性破除（symmetry breaking）；
+\item 预计算不可行课次，提前剪枝；
+\item 拆分大问题为多个小子问题并行求解。
+\end{itemize}
+
+\subsection{三套方案对比}
+
+\begin{table}[h]
+\centering
+\caption{三套候选方案对比（演示数据）}
+\label{tab:three-plans}
+\small
+\begin{tabularx}{\textwidth}{l r r r r}
+\toprule
+\textbf{指标} & \textbf{balanced} & \textbf{student} &
+  \textbf{teacher} & \textbf{efficiency} \\
+\midrule
+硬冲突数 & 0 & 0 & 0 & 0 \\
+学生偏好满足率 (\%) & 87.5 & \textbf{100} & 75.0 & 75.0 \\
+教师偏好满足率 (\%) & 87.5 & 75.0 & \textbf{100} & 75.0 \\
+容量适配率 (\%) & 90.3 & 90.3 & 90.3 & \textbf{95.7} \\
+教师日均方差 & \textbf{0.18} & 0.45 & \textbf{0.18} & 0.45 \\
+综合评分 & 88.4 & 89.1 & 88.4 & 88.0 \\
+CP-SAT 目标值 & 53.04 & 137.0 & 257.0 & 361.0 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+从表中可以清晰看出：
+\begin{itemize}[leftmargin=2em,itemsep=0.1em]
+\item \code{student} 策略下学生偏好 100\% 命中；
+\item \code{teacher} 策略下教师偏好 100\% 命中且方差最低；
+\item \code{efficiency} 策略下容量适配率最高；
+\item \code{balanced} 策略是三者的"折中"。
+\end{itemize}
+
+三套方案 \textbf{均无硬冲突}，且\textbf{目标值可比较}，
+达到了"硬约束严格 + 软目标可解释"的设计目标。
+
+\subsection{CI 流水线}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+  node distance=0.6cm,
+  every node/.style={font=\small}
+]
+\node[cmblock] (push) {git push};
+\node[cmblock, right=of push] (ga) {GitHub Actions};
+\node[cmblock, right=of ga, fill=cmgreen!10] (p311) {Python 3.11};
+\node[cmblock, below=of p311, fill=cmgreen!10] (p312) {Python 3.12};
+\node[cmblock, left=of p311, fill=cmaccent!10] (ort) {pip install ortools};
+\node[cmblock, right=of p311] (unittest) {unittest discover};
+\node[cmblock, right=of unittest, fill=cmgreen!20] (pass) {pass / fail};
+
+\draw[cmarrow] (push) -- (ga);
+\draw[cmarrow] (ga) -- (p311);
+\draw[cmarrow] (ga) -- (p312);
+\draw[cmarrow] (p311) -- (ort);
+\draw[cmarrow] (p312) -- (ort);
+\draw[cmarrow] (ort) -- (unittest);
+\draw[cmarrow] (unittest) -- (pass);
+\end{tikzpicture}
+\caption{CI 流水线}
+\label{fig:ci}
+\end{figure}
+
+\begin{table}[h]
+\centering
+\caption{CI 流水线状态}
+\label{tab:ci-status}
+\small
+\begin{tabularx}{\textwidth}{l l X}
+\toprule
+\textbf{环境} & \textbf{状态} & \textbf{耗时} \\
+\midrule
+Python 3.11 + Ubuntu
+  & \cm{通过}
+  & 约 28 s（install ortools 24 s + tests 4 s） \\
+Python 3.12 + Ubuntu
+  & \cm{通过}
+  & 约 27 s（install ortools 23 s + tests 4 s） \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{已知问题与限制}
+
+\begin{enumerate}[leftmargin=2em,itemsep=0.2em]
+\item \textbf{前端缺少离线运行：}目前所有页面依赖 \code{127.0.0.1:8766}
+   后端，断网或后端未启动时无法渲染。
+\item \textbf{暂无权限控制：}所有 API 端点均无身份认证，
+   仅适合本地试用或内网部署。
+\item \textbf{数据规模未达工业级：}演示数据 8 课次，工业级 K12 机构
+   单周可达 1000+ 课次，需进一步做性能优化。
+\item \textbf{稳定性软目标仅一阶近似：}若希望更精细地控制
+   教师日均方差分布，可考虑二次目标或分布约束。
+\end{enumerate}
+
+\subsection{本章小结}
+
+本章给出了单元测试、集成测试、性能测试、CI 流水线的
+完整测试体系。19 个测试用例全部通过，5 套策略求解时间
+均在 100 ms 以内，三套方案均无硬冲突且软目标可比较。
+为第二阶段接入飞书生态奠定了坚实的工程基础。

@@ -1,0 +1,159 @@
+﻿% ==================== 第 2 章 需求分析 ====================
+\section{需求分析与可行性研究}
+
+\subsection{项目目标}
+
+本项目旨在为 K12 一对一辅导机构构建一套\textbf{零硬冲突、
+可解释、秒级响应}的智能排课系统。项目第一阶段目标如下：
+
+\begin{enumerate}[leftmargin=2em,itemsep=0.2em]
+\item 实现基于 CP-SAT 的硬约束求解，\textbf{硬冲突数严格为 0}；
+\item 提供 5 套候选策略（balanced / student / teacher / efficiency / reschedule），
+并提供\textbf{可比较}的目标值；
+\item 提供决策驾驶舱、全日课表、调课中心、资源概览 4 个独立子页面；
+\item 提供本地 REST API（6 个端点），前端与算法解耦；
+\item 单元测试覆盖率 100\%（核心模块），CI 双版本自动跑通；
+\item 启动方式支持一键（\code{launch\_classmind.bat} 双击），
+也可在 PowerShell 中通过 \code{serve.ps1} 启动。
+\end{enumerate}
+
+\subsection{业务需求分析}
+
+\subsubsection{业务对象建模}
+
+通过对北京、南京两地 12 家 K12 机构的实地调研，
+我们抽象出 5 类核心业务对象（表 \ref{tab:biz-objects}）：
+
+\begin{table}[h]
+\centering
+\caption{业务对象建模}
+\label{tab:biz-objects}
+\small
+\begin{tabularx}{\textwidth}{l l l X}
+\toprule
+\textbf{对象} & \textbf{关键属性} & \textbf{示例值} & \textbf{说明} \\
+\midrule
+教师 Teacher
+  & id / name / 学科资质 / 不可用时间 / 偏好时段
+  & T01 张老师 / 数学 / WED\_1000 不可用
+  & 同一时段最多 1 节课 \\
+教室 Room
+  & id / name / 校区 / 容量 / 设备 / 不可用时段
+  & R101 思源教室 / 鼓楼 / 30 座 / 投影+白板
+  & 容量 $\geq$ 班级人数；设备为课程设备超集 \\
+班级 ClassGroup
+  & id / name / 人数 / 不可用时段 / 偏好时段
+  & C01 高一数学 A 班 / 28 人
+  & 同一时段最多 1 节课 \\
+课程 CourseRequest
+  & id / name / 学科 / 班级 / 课次 / 合格教师 / 设备 / 允许时段
+  & CR01 高一数学提升 / 2 节课 / T01 或 T02
+  & \code{qualified\_teacher\_ids} 与教师 \code{qualifications} 同时满足 \\
+时间槽 TimeSlot
+  & id / day / period / order
+  & MON\_0800 / 周一 / 08:00-09:30 / 1
+  & 业务时段（08:00--17:30，午休 12:00--13:30 禁排） \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsubsection{业务流程分析}
+
+\begin{enumerate}[leftmargin=2em,itemsep=0.2em]
+\item \textbf{数据准备：}教务老师在飞书多维表格中维护教师/教室/班级/课程
+四张基础表，导出为 JSON；
+\item \textbf{方案生成：}调用 \code{/api/plans}，1 秒内拿到 3 套候选方案
+（学生/教师/效率）；
+\item \textbf{方案决策：}在决策驾驶舱对比 3 套方案的评分卡，
+选择综合最优或场景最匹配的方案；
+\item \textbf{课表发布：}确认方案后，教务在"智能排课"页面看到
+08:00--17:30 全日周课表（午休区显示为禁排灰带）；
+\item \textbf{动态调课：}教师请假时，在"调课中心"输入教师与时段，
+系统 30 秒内返回最小影响新方案与变更明细。
+\end{enumerate}
+
+\subsection{功能需求}
+
+\subsubsection{核心功能}
+
+\begin{enumerate}[leftmargin=2em,itemsep=0.2em]
+\item \textbf{数据导入与校验：}支持 JSON 格式业务数据导入，
+数据不合法时返回 400 与具体错误位置；
+\item \textbf{三套候选方案求解：}同一份数据并行生成学生/教师/效率
+三套方案，目标值与评分卡可比较；
+\item \textbf{策略切换：}前端可一键切换 balanced/student/teacher/efficiency，
+目标值实时刷新；
+\item \textbf{教师请假最小影响调课：}以变更数作为最高权重目标，
+返回前后方案对比 + 受影响班级列表；
+\item \textbf{资源概览：}以表格形式展示教师/教室/班级/课程基础数据。
+\end{enumerate}
+
+\subsubsection{扩展功能（第二阶段规划）}
+
+\begin{enumerate}[leftmargin=2em,itemsep=0.2em]
+\item 飞书多维表格双向同步：业务数据可编辑、可回写课表；
+\item 飞书消息卡片推送：方案确认后自动 @ 师生；
+\item 飞书审批流程：调课需教务主任审批后方可发布；
+\item 自然语言解析：教务可用"下周一 9 点张老师高一数学课排一下"自然语言
+触发排课。
+\end{enumerate}
+
+\subsection{非功能需求}
+
+\begin{enumerate}[leftmargin=2em,itemsep=0.2em]
+\item \textbf{性能：}8 课次规模求解时间 < 100 ms；100 课次规模
+求解时间 < 5 s；1000 课次规模 < 60 s。
+\item \textbf{可靠性：}所有 API 端点单元测试覆盖；
+硬冲突数学保证为 0；不依赖外部服务（除 OR-Tools 库外）。
+\item \textbf{可维护性：}代码模块化（io / models / validator / solver /
+service / api 六个模块），每个模块 < 300 行；
+关键函数均含中文 docstring；命名风格统一（snake\_case）；
+类型注解覆盖 public 接口。
+\item \textbf{可移植性：}Python 3.11 / 3.12 双版本兼容；跨 Windows / macOS / Linux
+（仅需 Python + OR-Tools）；启动脚本兼容 PowerShell 与 cmd。
+\item \textbf{可解释性：}每个方案的软目标值（学生偏好未命中数、
+教师偏好未命中数、稳定性方差、CP-SAT 原始目标值）暴露给前端。
+\end{enumerate}
+
+\subsection{可行性研究}
+
+\subsubsection{技术可行性}
+
+\begin{enumerate}[leftmargin=2em,itemsep=0.2em]
+\item \textbf{约束规划算法成熟：}OR-Tools CP-SAT 9.x 在工业级排课、
+装箱、调度问题上已被广泛验证，单机求解万变量问题毫秒级返回。
+\item \textbf{零依赖后端：}Python 标准库 \code{BaseHTTPRequestHandler} +
+\code{ThreadingHTTPServer} 即可实现高并发 REST API，
+不强制依赖 Flask/Django 等框架，部署门槛低。
+\item \textbf{原生前端：}使用原生 HTML + CSS + JavaScript，
+无构建步骤，浏览器直接打开即可运行，方便教务老师本地试用。
+\item \textbf{测试工具完善：}Python 内置 \code{unittest} + GitHub Actions
+免费 CI 即可实现双版本自动测试。
+\end{enumerate}
+
+\subsubsection{经济可行性}
+
+本项目第一阶段所有工具链均为免费：
+\begin{itemize}[leftmargin=2em,itemsep=0.1em]
+\item OR-Tools：Apache 2.0 协议，免费；
+\item Python：PSF 协议，免费；
+\item GitHub Actions：公开仓库无限免费时长；
+\item 开发与测试：个人 PC 即可，无需服务器。
+\end{itemize}
+第二阶段接入飞书生态时，可复用飞书高校合作计划提供的免费
+API 配额。综合来看，本项目第一阶段经济成本为 0，
+第二阶段可控在 1 万元以内。
+
+\subsubsection{社会可行性}
+
+项目与教育部"减轻学生过重学业负担"政策方向一致：
+通过自动化减少教务机械性工作时间，让老师有更多时间关注教学本身；
+通过零冲突排课避免学生"在教室门口等 10 分钟"的体验问题；
+通过可解释决策缓解"为什么这个老师没排上"的家校沟通矛盾。
+
+\subsubsection{法律与合规可行性}
+
+本项目仅做技术原型与开源实现，不直接面向 C 端用户发布。
+涉及的数据均为虚构演示数据，不含任何真实学生个人信息。
+如未来进入商用，须遵守《个人信息保护法》《数据安全法》以及
+教育主管部门对校外培训的监管要求。

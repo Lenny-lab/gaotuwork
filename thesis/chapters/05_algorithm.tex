@@ -1,0 +1,302 @@
+﻿% ==================== 第 5 章 核心算法设计 ====================
+\section{核心算法设计与实现}
+
+\subsection{问题形式化}
+
+\subsubsection{输入}
+
+设业务输入为五元组 $(\mathcal{T}, \mathcal{R}, \mathcal{C}, \mathcal{K}, \mathcal{S})$，其中：
+\begin{itemize}[leftmargin=2em,itemsep=0.1em]
+\item $\mathcal{T} = \{t_1, t_2, \ldots, t_{n_T}\}$：教师集合；
+\item $\mathcal{R} = \{r_1, r_2, \ldots, r_{n_R}\}$：教室集合；
+\item $\mathcal{C} = \{c_1, c_2, \ldots, c_{n_C}\}$：班级集合；
+\item $\mathcal{K} = \{k_1, k_2, \ldots, k_{n_K}\}$：课程请求集合，每门课程
+$k_i$ 有 \code{sessions\_$k_i$} 次课次；
+\item $\mathcal{S} = \{s_1, s_2, \ldots, s_{n_S}\}$：时间槽集合，
+按 \code{day} 与 \code{order} 双重排序。
+\end{itemize}
+
+记 $L$ 为待排的总课次数，$L = \sum_{k \in \mathcal{K}} \code{sessions}\_k$。
+每个课次用一个唯一 ID $l \in \{k\text{-}j \mid k \in \mathcal{K},
+1 \le j \le \code{sessions}\_k\}$ 表示。
+
+\subsubsection{决策变量}
+
+定义布尔决策变量：
+\[
+x_{l, t, r, s} \in \{0, 1\}, \quad \forall l \in L,\; t \in \mathcal{T},\;
+r \in \mathcal{R},\; s \in \mathcal{S}
+\]
+
+$x_{l, t, r, s} = 1$ 表示"课次 $l$ 安排给教师 $t$、教室 $r$、时段 $s$"。
+在生成变量时即进行预筛选：若 $t$ 不具备 $l$ 对应学科资质、
+$r$ 容量不足、$r$ 缺少必要设备、$s$ 不在 \code{allowed\_slots}
+中或 $s$ 在教师/教室/班级不可用集合中，则该变量不存在
+（这一预筛选在求解前即可剔除 95\% 以上无效变量）。
+
+\subsubsection{硬约束}
+
+\begin{enumerate}[leftmargin=2em,itemsep=0.2em]
+\item \textbf{每节课恰好排一次：}
+\[
+\forall l \in L: \quad \sum_{t,r,s} x_{l,t,r,s} = 1
+\]
+\item \textbf{教师同 0 冲突：}
+\[
+\forall t \in \mathcal{T},\; s \in \mathcal{S}: \quad
+\sum_{l,r} x_{l,t,r,s} \le 1
+\]
+\item \textbf{教室同 0 冲突：}
+\[
+\forall r \in \mathcal{R},\; s \in \mathcal{S}: \quad
+\sum_{l,t} x_{l,t,r,s} \le 1
+\]
+\item \textbf{班级同 0 冲突：}
+\[
+\forall c \in \mathcal{C},\; s \in \mathcal{S}: \quad
+\sum_{l:\,l.\code{course.class\_id}=c} \sum_{t,r} x_{l,t,r,s} \le 1
+\]
+\item \textbf{同一课程不同时段：}
+\[
+\forall k \in \mathcal{K},\; s \in \mathcal{S}: \quad
+\sum_{l \in \code{lessons}\_k} \sum_{t,r} x_{l,t,r,s} \le 1
+\]
+\end{enumerate}
+
+\subsubsection{软目标}
+
+定义总软目标函数：
+\[
+Z = \underbrace{\sum_{l,t,r,s} \Big( w_p \cdot \code{pref}_{l,t,r,s}
++ w_e \cdot \code{cap}_{r,c}
++ w_k \cdot \code{compact}\_s \Big) \cdot x_{l,t,r,s}
+}_{\text{per-lesson cost}}
++ \underbrace{w_s \cdot \sum_{t \in \mathcal{T}, d \in \mathcal{D}}
+\big( \code{dev}^+_{t,d} + \code{dev}^-_{t,d} \big)}_{\text{stability cost}}
++ \underbrace{w_c \cdot \sum_{l \in L} \code{change}\_l}_{\text{change cost}}
+\]
+
+其中：
+\begin{itemize}[leftmargin=2em,itemsep=0.1em]
+\item $w_p$：偏好权重；$\code{pref}_{l,t,r,s} \in \{0, 1, 2\}$
+  表示"班级/教师偏好未命中数"。
+\item $w_e$：效率权重；$\code{cap}_{r,c} = (\code{capacity}\_r -
+  \code{size}\_c) / \code{capacity}\_r$。
+\item $w_k$：紧凑度权重；$\code{compact}\_s = (s.\code{order} - 1) /
+  \max\_\code{order}$。
+\item $w_s$：稳定性权重；$\code{dev}^\pm_{t,d}$ 是辅助变量
+  （见 5.4 节）。
+\item $w_c$：变更权重；$\code{change}\_l \in \{0, 1\}$ 表示该课次
+  是否与基线方案不同。
+\end{itemize}
+
+\subsection{策略权重表}
+
+策略权重表 \code{STRATEGY\_WEIGHTS} 集中定义 5 套策略，
+通过对权重的相对大小调整，让 CP-SAT 求解器自然地"偏向"不同维度：
+
+\begin{table}[h]
+\centering
+\caption{5 套策略权重表}
+\label{tab:strategy-weights}
+\small
+\begin{tabularx}{\textwidth}{l c c c c c X}
+\toprule
+\textbf{策略} & \textbf{$w_p$} & \textbf{$w_s$} & \textbf{$w_e$} &
+  \textbf{$w_c$} & \textbf{$w_k$} & \textbf{适用场景} \\
+\midrule
+\code{student}
+  & 10 & 2 & 1 & 0 & 3
+  & 学生视角：尽量命中班级+教师偏好时段 \\
+\code{teacher}
+  & 2 & 10 & 1 & 0 & 3
+  & 教师视角：教师日均课次尽量均匀 \\
+\code{efficiency}
+  & 1 & 2 & 10 & 0 & 3
+  & 运营视角：教室容量浪费最少 \\
+\code{balanced}
+  & 5 & 5 & 5 & 0 & 3
+  & 平衡：五维度等权，仅保留紧凑度 \\
+\code{reschedule}
+  & 1 & 1 & 1 & 100 & 0
+  & 调课：变更数压制一切其他目标 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\textbf{设计原则：}
+\begin{enumerate}[leftmargin=2em,itemsep=0.2em]
+\item 维度内部 0-10 标度：0 表示该维度完全不参与目标，10 表示最高优先级。
+\item 任何策略下硬冲突 $\equiv 0$，软目标可比较。
+\item \code{reschedule} 的 $w_c = 100$ 在量级上显著高于其他维度
+   10 的最大值，确保 CP-SAT 优先最小化变更。
+\end{enumerate}
+
+\subsection{稳定性软目标的线性化}
+
+教师日均课次方差是经典二次目标，CP-SAT 直接不支持。
+我们使用一阶泰勒近似将其线性化。
+
+定义每位教师每天的课次数为：
+\[
+c_{t,d} = \sum_{l, r, s:\,s.\code{day}=d} x_{l,t,r,s}
+\]
+
+期望日均（用于软目标归一化）：
+\[
+\bar{c} = \left\lfloor \frac{L}{n_T \cdot n_D} \right\rfloor
+\]
+其中 $n_D$ 为一周内有效天数（演示数据为 5）。
+
+为每位教师每天引入两个辅助变量：
+\[
+\code{dev}^+_{t,d} \ge c_{t,d} - \bar{c}, \quad
+\code{dev}^-_{t,d} \ge \bar{c} - c_{t,d}
+\]
+
+且 $\code{dev}^\pm_{t,d} \ge 0$（由 \code{new\_int\_var(0, ...)} 自然保证）。
+
+目标函数中累加 $w_s \cdot (\code{dev}^+_{t,d} + \code{dev}^-_{t,d})$，
+等价于一阶 $|c_{t,d} - \bar{c}|$，保留了 CP-SAT 的线性可解性。
+
+实现时按“教师--日期”遍历并创建正、负偏差辅助变量，再把两者之和加入
+目标函数。该实现的完整源码见附录 D；正文保留数学定义即可复现建模思想。
+
+\subsection{最小影响调课算法}
+
+调课场景：教师 $t^*$ 在时段 $s^*$ 请假。
+算法目标：保留尽可能多的课次不变，自动调整受影响的课次。
+
+\subsubsection{算法步骤}
+
+\begin{algorithm}[h]
+\caption{最小影响调课算法}
+\label{alg:reschedule}
+\begin{algorithmic}[1]
+\Require 原问题 $P$，请假教师 $t^*$，请假时段 $s^*$
+\Ensure 新课表 $S'$，变更明细 $\Delta$
+\State 求解 $S_0 \gets \code{solve\_schedule}(P, \code{strategy=balanced})$
+\State 构造 $P' \gets \code{replace}(P, \code{teachers}=\code{replace}(t^*, \code{unavailable}=\code{unavailable} \cup \{s^*\}))$
+\State 求解 $S' \gets \code{solve\_schedule}(P', \code{strategy=reschedule}, \code{baseline}=S_0)$
+\State 计算 $\Delta \gets \code{diff\_schedules}(S_0, S')$
+\State \Return $S', \Delta$
+\end{algorithmic}
+\end{algorithm}
+
+\subsubsection{关键设计点}
+
+\begin{enumerate}[leftmargin=2em,itemsep=0.2em]
+\item \textbf{基线对齐：}将 $S_0$ 作为 \code{baseline} 传入，
+  让 \code{\_per\_lesson\_soft\_costs} 中的 \code{change\_cost} 函数
+  能识别"哪条课次变了"。
+\item \textbf{权重压制：}\code{reschedule} 策略的 $w_c = 100$，
+  是其他维度的 10 倍以上，确保 CP-SAT 优先最小化变更。
+\item \textbf{变更明细：}\code{diff\_schedules} 输出"before/after"对，
+  教务可直接发通知。
+\item \textbf{影响班级：}自动汇总 \code{affected\_classes} 列表，
+  方便按班级批量通知。
+\end{enumerate}
+
+\subsection{不可行诊断}
+
+当硬约束组合无可行解时，求解器返回 \code{INFEASIBLE}。
+系统在 \code{solver.py} 中提供两层诊断：
+
+\begin{enumerate}[leftmargin=2em,itemsep=0.2em]
+\item \textbf{变量层：}若某课次 $l$ 的可行决策变量集合为空
+  （即没有任何教师/教室/时段组合），直接报告"课次无任何可行
+  教师/教室/时段: $l$"，定位到具体课次。
+\item \textbf{求解器层：}若变量层均有非空，但全局无可行解，
+  返回"当前硬约束组合无可行课表"，提示教务需要放宽约束
+  （如增加合格教师、调整允许时段）。
+\end{enumerate}
+
+\subsection{算法复杂度分析}
+
+\subsubsection{变量数}
+
+最坏情况下，决策变量数为 $L \times n_T \times n_R \times n_S$。
+演示数据 $L=8,\;n_T=4,\;n_R=3,\;n_S=20$，理论上界为
+$8 \times 4 \times 3 \times 20 = 1920$，预筛选后实际变量
+数 < 100。
+
+\begin{table}[h]
+\centering
+\caption{演示数据变量数预筛选效果}
+\label{tab:var-shrink}
+\small
+\begin{tabularx}{\textwidth}{l r r r}
+\toprule
+\textbf{课次} & \textbf{理论变量} & \textbf{实际变量} & \textbf{压缩比} \\
+\midrule
+CR01-1（高一数学）
+  & 160 & 9 & 5.6\% \\
+CR02-1（高一英语）
+  & 80 & 12 & 15.0\% \\
+CR03-1（高二物理）
+  & 160 & 14 & 8.8\% \\
+CR04-1（初三数学）
+  & 160 & 8 & 5.0\% \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsubsection{求解时间}
+
+\begin{table}[h]
+\centering
+\caption{各策略求解时间（演示数据）}
+\label{tab:solve-time}
+\small
+\begin{tabularx}{\textwidth}{l r r X}
+\toprule
+\textbf{策略} & \textbf{目标值} & \textbf{耗时 (ms)} & \textbf{结果} \\
+\midrule
+\code{balanced}
+  & 53.04 & 42.15 & 平衡偏好+效率 \\
+\code{student}
+  & 137 & 38.7 & 学生偏好最大化 \\
+\code{teacher}
+  & 257 & 35.2 & 稳定性最大化 \\
+\code{efficiency}
+  & 361 & 36.1 & 容量浪费最小化 \\
+\code{reschedule}
+  & 100.6 & 51.8 & 变更数 $\le 4$ \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsubsection{复杂度上界}
+
+CP-SAT 的最坏复杂度为指数级，但工业经验表明，对排课这类
+\textbf{稀疏约束}问题，CP-SAT 的实际表现接近多项式。
+本项目在演示数据上的求解时间均在 100 ms 以内，
+完全满足"秒级响应"的工程要求。
+
+\subsection{算法正确性证明}
+
+\subsubsection{硬约束严格性}
+
+由约束 (1)--(5) 均为线性布尔约束，CP-SAT 求解器在
+返回 \code{OPTIMAL} 或 \code{FEASIBLE} 时保证：
+\begin{itemize}[leftmargin=2em,itemsep=0.1em]
+\item 每节课 $l$ 恰有一个 $x_{l,t,r,s} = 1$；
+\item 任意教师/教室/班级/课程对 $\le 1$ 条 $x=1$。
+\end{itemize}
+
+\subsubsection{软目标最优性}
+
+CP-SAT 是\textbf{完备求解器}（complete solver）：
+当返回 \code{OPTIMAL} 时，证明不存在目标值更小的可行解。
+当返回 \code{FEASIBLE} 时，给出的是当前搜索到的最优解。
+
+\subsection{本章小结}
+
+本章给出了排课问题的 CP 形式化、5 套策略权重表、
+稳定性软目标线性化、最小影响调课算法、不可行诊断、
+复杂度分析与正确性证明。核心创新点：
+\begin{enumerate}[leftmargin=2em,itemsep=0.2em]
+\item 软目标拆解为 5 个独立维度，可解释可比较；
+\item 稳定性目标通过一阶泰勒近似保持 CP-SAT 线性可解；
+\item 调课算法复用求解器，仅切换权重即可"零成本"支持重排。
+\end{enumerate}

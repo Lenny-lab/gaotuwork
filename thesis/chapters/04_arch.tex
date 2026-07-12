@@ -1,0 +1,236 @@
+﻿% ==================== 第 4 章 总体设计 ====================
+\section{总体设计}
+
+\subsection{设计原则}
+
+本项目在系统设计时遵循以下原则：
+\begin{enumerate}[leftmargin=2em,itemsep=0.2em]
+\item \textbf{算法与界面解耦：}所有业务数据通过 \code{io.py} 转换为
+纯 Python 对象（\code{Problem}），由 \code{solver.py} 求解，
+与具体 UI 实现无关。
+\item \textbf{硬约束求解与软目标拆解：}硬约束用 \code{AddAtMostOne} /
+\code{AddExactlyOne} 保证，软目标用线性加权和实现，
+便于对比与解释。
+\item \textbf{零依赖部署：}仅依赖 OR-Tools 单一第三方库，
+HTTP 服务使用 Python 标准库，前端无构建步骤。
+\item \textbf{可测试性：}每个模块可独立 \code{unittest} 覆盖，
+业务逻辑通过纯函数实现，避免副作用。
+\end{enumerate}
+
+\subsection{系统架构}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+  node distance=0.7cm and 0.9cm,
+  layer/.style={font=\bfseries\color{cmblue}},
+  every node/.style={font=\small}
+]
+\node[layer] (fe) {前端层 (Browser)};
+\node[cmblock, below=of fe] (dash) {决策驾驶舱};
+\node[cmblock, right=of dash] (sched) {智能排课};
+\node[cmblock, below=of dash] (resc) {调课中心};
+\node[cmblock, right=of resc] (reso) {资源概览};
+
+\node[layer, below=1.2cm of dash.south] (be) {后端层 (Python 3.12)};
+\node[cmblock, fill=cmgreen!10, below=0.7cm of be] (api) {API 网关 (api.py)};
+\node[cmblock, fill=cmgreen!10, below=of api] (svc) {业务编排 (service.py)};
+
+\node[layer, below=1.2cm of svc.south] (core) {核心算法层};
+\node[cmblock, fill=cmaccent!10, below=0.7cm of core] (solv) {求解器 (solver.py)};
+\node[cmblock, fill=cmaccent!10, right=of solv] (vali) {校验器 (validator.py)};
+\node[cmblock, fill=cmaccent!10, left=of solv] (io) {数据 I/O (io.py)};
+
+\node[cmblock, below=of vali, fill=gray!10] (mdl) {models.py (数据类)};
+
+\node[layer, below=0.7cm of mdl.south] (data) {数据层};
+\node[cmblock, below=0.7cm of data] (demo) {data/demo.json};
+
+\draw[cmarrow] (dash) -- (api);
+\draw[cmarrow] (sched) -- (api);
+\draw[cmarrow] (resc) -- (api);
+\draw[cmarrow] (reso) -- (api);
+\draw[cmarrow] (api) -- (svc);
+\draw[cmarrow] (svc) -- (solv);
+\draw[cmarrow] (svc) -- (vali);
+\draw[cmarrow] (solv) -- (io);
+\draw[cmarrow] (io) -- (demo);
+\draw[cmarrow, dashed] (vali) -- (mdl);
+\draw[cmarrow, dashed] (solv) -- (mdl);
+\end{tikzpicture}
+\caption{ClassMind 系统架构图}
+\label{fig:arch}
+\end{figure}
+
+\subsubsection{前端层}
+
+前端由 4 个独立子页面 + 1 个共享侧栏母版组成，详见
+表 \ref{tab:fe-pages}。
+
+\begin{table}[h]
+\centering
+\caption{前端页面与功能}
+\label{tab:fe-pages}
+\small
+\begin{tabularx}{\textwidth}{l l X}
+\toprule
+\textbf{页面} & \textbf{URL} & \textbf{功能} \\
+\midrule
+决策驾驶舱
+  & \code{/}
+  & 展示综合评分、4 项核心指标、今日决策摘要、3 套方案评分对比、
+AI 解释区（"系统为什么这样排"） \\
+智能排课
+  & \code{/schedule.html}
+  & 08:00--17:30 全日周课表（5 天 $\times$ 8 时段），
+午休 12:00--13:30 显示为禁排灰带 \\
+调课中心
+  & \code{/reschedule.html}
+  & 输入教师与时段，30 秒内返回最小影响新方案与变更明细 \\
+资源概览
+  & \code{/resources.html}
+  & 教师 / 教室 / 班级 / 课程四张基础数据表 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsubsection{后端层}
+
+后端由 6 个模块组成，模块划分与依赖关系如图
+\ref{fig:arch} 所示。
+
+\begin{itemize}[leftmargin=2em,itemsep=0.1em]
+\item \code{\_\_init\_\_.py}：包标识；
+\item \code{models.py}：不可变数据类（TimeSlot / Teacher / Room /
+ClassGroup / CourseRequest / Problem / ScheduledLesson / SolveResult）；
+\item \code{io.py}：JSON 与 \code{Problem} 之间的双向转换；
+\item \code{validator.py}：业务数据与生成课表的双向校验；
+\item \code{solver.py}：核心 CP-SAT 求解器（5 套策略）；
+\item \code{service.py}：业务编排层（评分卡、调课、负载统计）；
+\item \code{api.py}：HTTP 网关（6 个端点 + 静态文件服务）；
+\item \code{cli.py}：命令行入口（用于 CI 验证）。
+\end{itemize}
+
+\subsection{数据流}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+  node distance=0.8cm and 0.6cm,
+  every node/.style={font=\small}
+]
+\node[cmblock] (json) {demo.json};
+\node[cmblock, right=of json] (prob) {Problem};
+\node[cmblock, right=of prob] (sol) {SolveResult};
+\node[cmblock, right=of sol] (resp) {JSON Response};
+\node[cmblock, below=of resp] (ui) {浏览器渲染};
+
+\draw[cmarrow] (json) -- node[above]{load\_problem} (prob);
+\draw[cmarrow] (prob) -- node[above]{solve\_schedule} (sol);
+\draw[cmarrow] (sol) -- node[above]{to\_dict} (resp);
+\draw[cmarrow] (resp) -- (ui);
+\end{tikzpicture}
+\caption{核心数据流}
+\label{fig:dataflow}
+\end{figure}
+
+\subsection{模块接口设计}
+
+\subsubsection{\code{models.Problem} 关键字段}
+
+\begin{table}[h]
+\centering
+\caption{Problem 数据结构}
+\label{tab:problem-struct}
+\small
+\begin{tabularx}{\textwidth}{l l l X}
+\toprule
+\textbf{字段} & \textbf{类型} & \textbf{示例} & \textbf{说明} \\
+\midrule
+\code{time\_slots} & \code{tuple[TimeSlot]} & 20 个
+  & 含 \code{day / period / order} \\
+\code{teachers} & \code{tuple[Teacher]} & 4 个
+  & 学科资质 + 不可用 + 偏好 \\
+\code{rooms} & \code{tuple[Room]} & 3 个
+  & 容量 + 设备 + 不可用 \\
+\code{classes} & \code{tuple[ClassGroup]} & 4 个
+  & 人数 + 不可用 + 偏好 \\
+\code{courses} & \code{tuple[CourseRequest]} & 4 个
+  & 课次 + 合格教师 + 设备 + 允许时段 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsubsection{\code{SolveResult} 关键字段}
+
+\begin{table}[h]
+\centering
+\caption{SolveResult 数据结构}
+\label{tab:solve-result-struct}
+\small
+\begin{tabularx}{\textwidth}{l l X}
+\toprule
+\textbf{字段} & \textbf{类型} & \textbf{说明} \\
+\midrule
+\code{status}
+  & \code{str}
+  & \code{OPTIMAL} / \code{FEASIBLE} / \code{INFEASIBLE} / \code{INVALID\_DATA} \\
+\code{schedule}
+  & \code{list[ScheduledLesson]}
+  & 求解得到的课次列表，按 slot.order 升序 \\
+\code{conflicts}
+  & \code{list[str]}
+  & 独立校验器发现的冲突（应为空数组） \\
+\code{metrics}
+  & \code{dict}
+  & 求解耗时、课次数、硬冲突数、目标值等 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{技术选型对比}
+
+\begin{table}[h]
+\centering
+\caption{技术选型对比}
+\label{tab:tech-choice}
+\small
+\begin{tabularx}{\textwidth}{l l l X}
+\toprule
+\textbf{决策点} & \textbf{选用方案} & \textbf{候选方案} & \textbf{选择理由} \\
+\midrule
+求解器
+  & OR-Tools CP-SAT 9.15
+  & Gurobi / 遗传算法 / 贪心
+  & 免费、SOTA、硬约束严格 \\
+后端框架
+  & \code{BaseHTTPRequestHandler}
+  & Flask / FastAPI / Django
+  & 零依赖、跨平台、启动快 \\
+前端框架
+  & 原生 HTML/CSS/JS
+  & Vue / React / Svelte
+  & 零构建、零安装 \\
+数据类
+  & \code{dataclass(frozen=True)}
+  & Pydantic / attrs
+  & 标准库、轻量 \\
+测试框架
+  & \code{unittest}
+  & pytest
+  & 标准库、CI 无需额外安装 \\
+CI
+  & GitHub Actions
+  & Travis CI / CircleCI
+  & 免费、双版本、生态好 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{本章小结}
+
+本章给出了系统的整体架构、模块划分、数据流与关键数据结构。
+通过"前端 ↔ API ↔ Service ↔ Solver ↔ Validator"的分层设计，
+保证了算法的可独立测试性与前端的可替换性。
+后续章节将依次深入介绍算法设计（第 5 章）与系统实现
+（第 6 章）。
