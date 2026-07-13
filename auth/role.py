@@ -1,12 +1,15 @@
 from __future__ import annotations
 
-from classmind.users import User, find_by_feishu_id
+from classmind.users import User, bind_feishu_open_id, find_by_feishu_id, find_by_mobile
 
 
 def infer_role(user_info: dict) -> str:
     """Infer a least-privilege role from mapping, department and job title."""
     open_id = user_info.get("open_id") or user_info.get("user_id") or ""
     local = find_by_feishu_id(open_id) if open_id else None
+    if local:
+        return local.role
+    local = find_by_mobile(user_info.get("mobile", ""))
     if local:
         return local.role
 
@@ -30,6 +33,11 @@ def user_from_feishu(user_info: dict) -> User:
     open_id = user_info.get("open_id") or user_info.get("user_id") or ""
     local = find_by_feishu_id(open_id) if open_id else None
     if local:
+        return local
+    local = find_by_mobile(user_info.get("mobile", ""))
+    if local:
+        if open_id and not local.feishu_open_id:
+            return bind_feishu_open_id(local.id, open_id)
         return local
     return User(
         id=open_id or "FEISHU_USER",

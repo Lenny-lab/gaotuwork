@@ -3,9 +3,9 @@ import unittest
 from unittest.mock import Mock, patch
 
 from app import app
-from auth.feishu_oauth import build_authorize_url, lookup_open_id_by_mobile
-from auth.role import infer_role
-from classmind.users import find_by_feishu_id, find_by_id, find_by_role, load_users
+from auth.feishu_oauth import build_authorize_url, enrich_with_contact_profile, lookup_open_id_by_mobile
+from auth.role import infer_role, user_from_feishu
+from classmind.users import find_by_feishu_id, find_by_id, find_by_mobile, find_by_role, load_users
 from feishuapi.python import feishu_card
 
 
@@ -66,6 +66,7 @@ class RoleAccessTests(unittest.TestCase):
         page.close()
         portal = self.client.get("/")
         self.assertIn("三角色", portal.get_data(as_text=True))
+        portal.close()
         self.assertEqual(200, self.client.get("/api/plans").status_code)
         users = self.client.get("/api/admin/users").get_json()["users"]
         self.assertEqual(len(load_users()), len(users))
@@ -101,6 +102,7 @@ class RoleAccessTests(unittest.TestCase):
         response = self.client.get("/?login_identity=ou_not_configured")
         self.assertEqual(200, response.status_code)
         self.assertIn("请选择你的 ClassMind 工作台", response.get_data(as_text=True))
+        response.close()
         self.assertFalse(self.client.get("/api/session").get_json()["authenticated"])
 
 
@@ -109,6 +111,32 @@ class UserAndCardTests(unittest.TestCase):
         self.assertIsNone(find_by_feishu_id(""))
         self.assertIsNone(find_by_feishu_id("ou_not_configured"))
         self.assertGreaterEqual(len(find_by_role("student")), 1)
+
+    def test_li_yi_mobile_maps_to_academic_affairs_without_api_exposure(self):
+        local = find_by_mobile("+86 183-0628-0137")
+        self.assertIsNotNone(local)
+        self.assertEqual("U_A002", local.id)
+        self.assertEqual("李一", local.name)
+        self.assertEqual("academic_affairs", local.role)
+        self.assertNotIn("mobile", local.to_dict())
+        self.assertEqual("academic_affairs", infer_role({"mobile": "18306280137"}))
+        with patch("auth.role.bind_feishu_open_id", return_value=local) as bind:
+            resolved = user_from_feishu({"open_id": "ou_li_yi", "mobile": "+8618306280137"})
+        self.assertEqual("U_A002", resolved.id)
+        bind.assert_called_once_with("U_A002", "ou_li_yi")
+
+    def test_contact_profile_keeps_mobile_for_private_account_mapping(self):
+        response = Mock()
+        response.raise_for_status.return_value = None
+        response.json.return_value = {
+            "code": 0,
+            "data": {"user": {"name": "李一", "mobile": "+8618306280137", "department_ids": []}},
+        }
+        with patch("auth.feishu_oauth._tenant_access_token", return_value="tenant-token"), patch(
+            "auth.feishu_oauth.requests.get", return_value=response
+        ):
+            profile = enrich_with_contact_profile("https://open.feishu.cn", "cli_test", "secret", {"open_id": "ou_li_yi"})
+        self.assertEqual("+8618306280137", profile["mobile"])
 
     def test_oauth_url_contains_state_and_redirect(self):
         url = build_authorize_url("cli_demo", "https://example.com/auth/callback", "csrf-state")

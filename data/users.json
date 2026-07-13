@@ -7,6 +7,7 @@
     {"id":"U_T001","feishu_open_id":"","name":"张锦倪","role":"teacher","teacher_id":"T01","subjects":["数学"],"teaching_grades":["高一","初三"],"years_experience":6,"mapping_status":"pending_mobile_lookup"},
     {"id":"U_T002","feishu_open_id":"","name":"李老师","role":"teacher","teacher_id":"T02","subjects":["数学","物理"],"mapping_status":"pending_real_open_id"},
     {"id":"U_T003","feishu_open_id":"","name":"王老师","role":"teacher","teacher_id":"T03","subjects":["英语"],"mapping_status":"pending_real_open_id"},
-    {"id":"U_A001","feishu_open_id":"","name":"王教务","role":"academic_affairs","permissions":["*"],"mapping_status":"pending_real_open_id"}
+    {"id":"U_A001","feishu_open_id":"","name":"王教务","role":"academic_affairs","permissions":["*"],"mapping_status":"pending_real_open_id"},
+    {"id":"U_A002","feishu_open_id":"","name":"李一","role":"academic_affairs","mobile":"18306280137","permissions":["*"],"mapping_status":"pending_mobile_lookup"}
   ]
 }

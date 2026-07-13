@@ -125,6 +125,7 @@ def enrich_with_contact_profile(host: str, app_id: str, app_secret: str, user_in
     return {
         **user_info,
         "name": contact_user.get("name") or user_info.get("name"),
+        "mobile": contact_user.get("mobile") or user_info.get("mobile", ""),
         "job_title": contact_user.get("job_title", ""),
         "departments": department_names,
         "avatar_url": avatar.get("avatar_240") or avatar.get("avatar_origin") or user_info.get("avatar_url", ""),

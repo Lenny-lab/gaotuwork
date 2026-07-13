@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import threading
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -21,6 +22,7 @@ class User:
     name: str
     role: str
     avatar: str = ""
+    mobile: str = ""
     class_id: str = ""
     teacher_id: str = ""
     subjects: tuple[str, ...] = ()
@@ -52,7 +54,7 @@ class User:
 
 
 def _user_from_dict(raw: dict) -> User:
-    known = {"id", "feishu_open_id", "name", "role", "avatar", "class_id", "teacher_id", "subjects", "permissions"}
+    known = {"id", "feishu_open_id", "name", "role", "avatar", "mobile", "class_id", "teacher_id", "subjects", "permissions"}
     role = raw.get("role", "")
     if role not in VALID_ROLES:
         raise ValueError(f"无效用户角色: {role}")
@@ -62,6 +64,7 @@ def _user_from_dict(raw: dict) -> User:
         name=raw["name"],
         role=role,
         avatar=raw.get("avatar", ""),
+        mobile=_normalize_mobile(raw.get("mobile", "")),
         class_id=raw.get("class_id", ""),
         teacher_id=raw.get("teacher_id", ""),
         subjects=tuple(raw.get("subjects", [])),
@@ -79,6 +82,21 @@ def find_by_feishu_id(open_id: str) -> User | None:
     if not open_id:
         return None
     return next((user for user in load_users() if user.feishu_open_id and user.feishu_open_id == open_id), None)
+
+
+def _normalize_mobile(mobile: str) -> str:
+    """Canonicalize Chinese mobile numbers while accepting Feishu's +86 form."""
+    digits = re.sub(r"\D", "", str(mobile or ""))
+    if len(digits) == 13 and digits.startswith("86"):
+        digits = digits[2:]
+    return digits
+
+
+def find_by_mobile(mobile: str) -> User | None:
+    normalized = _normalize_mobile(mobile)
+    if not normalized:
+        return None
+    return next((user for user in load_users() if user.mobile and user.mobile == normalized), None)
 
 
 def find_by_role(role: str) -> list[User]:
