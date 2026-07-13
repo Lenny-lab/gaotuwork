@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>教师工作台 · ClassMind</title><link rel="stylesheet" href="/static/role.css"><style>:root{--accent:#12a150;--accent-soft:#e7f8ee}</style></head>
+<body data-view="teacher-dashboard"><div class="shell">
+  <aside class="sidebar"><div class="brand">Class<span>Mind</span></div><div class="identity"><strong data-user-name>加载中</strong><small><span data-user-role>教师</span> · 教学空间</small></div><nav class="nav"><a class="active" href="/teacher/dashboard">教学首页</a><a href="/teacher/schedule">我的课表</a><a href="/teacher/leave">请假调课</a><a href="/portal">角色门户</a></nav><a class="logout" href="/auth/logout">退出登录</a></aside>
+  <main class="main"><div class="eyebrow">Teacher workspace</div><h1 class="title">欢迎回来，<span data-user-name>老师</span></h1><p class="subtitle">你的授课年级、课程、班级和学生范围已自动汇总。</p>
+    <section class="grid"><div class="card"><div class="label">授课年级</div><div id="metric-teaching-grades" class="metric skeleton">--</div><div class="label">教龄 <span id="metric-experience">--</span> 年</div></div><div class="card"><div class="label">本周授课</div><div id="metric-lessons" class="metric skeleton">0</div><div class="label">节课</div></div><div class="card"><div class="label">覆盖班级</div><div id="metric-classes" class="metric skeleton">0</div><div class="label">个班</div></div><div class="card"><div class="label">已绑定学生</div><div id="metric-students" class="metric skeleton">0</div><div class="label">名学生</div></div></section>
+    <section class="section"><div class="section-head"><h2>本周授课日历</h2><a class="pill" href="/teacher/schedule">查看完整课表</a></div><div id="content" class="empty">正在加载课表…</div></section>
+  </main>
+</div><script src="/static/role.js"></script></body></html>

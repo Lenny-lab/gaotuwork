@@ -63,7 +63,7 @@ function renderCalendar(schedule) {
     }).join('');
     return `<div class="calendar-day"><div class="lunch-band"><span>午休</span></div>${events}</div>`;
   }).join('');
-  $('calendar').innerHTML = `<div class="calendar-head"><div>时间</div>${workDays.map(day => `<strong>${day}</strong>`).join('')}</div><div class="calendar-body"><div class="time-axis">${timeAxis}</div><div class="calendar-days">${columns}</div></div>`;
+  $('calendar').innerHTML = `<div class="calendar-scroll" aria-label="可横向滚动的周课表"><div class="calendar-head"><div>时间</div>${workDays.map(day => `<strong>${day}</strong>`).join('')}</div><div class="calendar-body"><div class="time-axis">${timeAxis}</div><div class="calendar-days">${columns}</div></div></div>`;
 }
 
 function dashboardSummary(plan) {
@@ -104,6 +104,26 @@ async function loadPlans() {
   } catch (error) {
     if ($('legend')) $('legend').textContent = `服务连接失败：${error.message}`;
     if ($('decision-summary')) $('decision-summary').innerHTML = `<div class="error-state"><b>数据加载失败</b><span>${error.message}</span></div>`;
+  }
+}
+
+async function loadAdminStatistics() {
+  if (!$('admin-statistics')) return;
+  try {
+    const data = await api('/api/admin/statistics');
+    const items = [
+      ['业务账号', data.users.total, `学生 ${data.users.students} · 教师 ${data.users.teachers} · 教务 ${data.users.academic_affairs}`, ''],
+      ['飞书已绑定', data.users.bound, `待绑定 ${data.users.pending} 个`, data.users.pending ? 'stat-warn' : 'stat-good'],
+      ['教学资源', data.resources.teachers + data.resources.rooms, `教师 ${data.resources.teachers} · 教室 ${data.resources.rooms}`, ''],
+      ['班级学生', data.resources.students, `${data.resources.classes} 个班级`, ''],
+      ['课程门数', data.resources.courses, `需求 ${data.resources.requested_lessons} 课次`, ''],
+      ['已排课次', data.schedule.scheduled_lessons, `求解状态 ${data.schedule.status}`, 'stat-good'],
+      ['硬冲突', data.schedule.hard_conflicts, '全局独立校验结果', data.schedule.hard_conflicts ? 'stat-warn' : 'stat-good'],
+      ['数据范围', '全局', '教务专属统计权限', 'stat-good'],
+    ];
+    $('admin-statistics').innerHTML = items.map(item => `<article class="${item[3]}"><span>${item[0]}</span><b>${item[1]}</b><small>${item[2]}</small></article>`).join('');
+  } catch (error) {
+    $('admin-statistics').innerHTML = `<div class="error-state"><b>全局统计加载失败</b><span>${error.message}</span></div>`;
   }
 }
 
@@ -176,6 +196,7 @@ async function setupResources() {
 if (page === 'dashboard' || page === 'schedule') {
   $('refresh').onclick = loadPlans;
   loadPlans();
+  if (page === 'dashboard') loadAdminStatistics();
 } else if (page === 'reschedule') {
   $('simulate').onclick = simulate;
   setupReschedule();

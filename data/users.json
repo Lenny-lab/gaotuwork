@@ -1,0 +1,12 @@
+{
+  "users": [
+    {"id":"U_S001","feishu_open_id":"","name":"朱晴晴","role":"student","class_id":"C01","email":"student01@classmind.demo","grade":"高一","age":16,"mapping_status":"pending_mobile_lookup"},
+    {"id":"U_S002","feishu_open_id":"","name":"林晓","role":"student","class_id":"C02","email":"student02@classmind.demo","mapping_status":"pending_real_open_id"},
+    {"id":"U_S003","feishu_open_id":"","name":"周可","role":"student","class_id":"C03","email":"student03@classmind.demo","mapping_status":"pending_real_open_id"},
+    {"id":"U_S004","feishu_open_id":"","name":"许言","role":"student","class_id":"C04","email":"student04@classmind.demo","mapping_status":"pending_real_open_id"},
+    {"id":"U_T001","feishu_open_id":"","name":"张锦倪","role":"teacher","teacher_id":"T01","subjects":["数学"],"teaching_grades":["高一","初三"],"years_experience":6,"mapping_status":"pending_mobile_lookup"},
+    {"id":"U_T002","feishu_open_id":"","name":"李老师","role":"teacher","teacher_id":"T02","subjects":["数学","物理"],"mapping_status":"pending_real_open_id"},
+    {"id":"U_T003","feishu_open_id":"","name":"王老师","role":"teacher","teacher_id":"T03","subjects":["英语"],"mapping_status":"pending_real_open_id"},
+    {"id":"U_A001","feishu_open_id":"","name":"王教务","role":"academic_affairs","permissions":["*"],"mapping_status":"pending_real_open_id"}
+  ]
+}

@@ -7,10 +7,11 @@
 """
 from __future__ import annotations
 
+import os
 from typing import Any
 
 
-def schedule_card(title: str, result, query: str) -> dict[str, Any]:
+def schedule_card(title: str, result, query: str, template: str = "blue") -> dict[str, Any]:
     """排课结果卡片。"""
     schedule = result.schedule if hasattr(result, "schedule") else result.get("schedule", [])
     status = result.status if hasattr(result, "status") else result.get("status", "UNKNOWN")
@@ -81,9 +82,39 @@ def schedule_card(title: str, result, query: str) -> dict[str, Any]:
         "config": {"wide_screen_mode": True},
         "header": {
             "title": {"tag": "plain_text", "content": title},
-            "template": "blue" if hard_conflicts == 0 else "red",
+            "template": template if hard_conflicts == 0 else "red",
         },
         "elements": elements,
+    }
+
+
+def student_schedule_card(name: str, schedule: list[dict], query: str = "我的课表") -> dict[str, Any]:
+    return schedule_card(
+        title=f"{name}同学 · 本周课表",
+        result={"status": "READY", "schedule": schedule, "hard_conflict_count": 0},
+        query=query,
+        template="blue",
+    )
+
+
+def teacher_schedule_card(name: str, schedule: list[dict], query: str = "我的课表") -> dict[str, Any]:
+    return schedule_card(
+        title=f"{name} · 我的授课安排",
+        result={"status": "READY", "schedule": schedule, "hard_conflict_count": 0},
+        query=query,
+        template="green",
+    )
+
+
+def teacher_leave_card(name: str) -> dict[str, Any]:
+    leave_url = f"{os.getenv('PUBLIC_BASE_URL', 'https://classmind-feishu.onrender.com').rstrip('/')}/teacher/leave"
+    return {
+        "config": {"wide_screen_mode": True},
+        "header": {"title": {"tag": "plain_text", "content": f"{name} · 请假调课"}, "template": "green"},
+        "elements": [
+            {"tag": "div", "text": {"tag": "lark_md", "content": "请打开教师工作台选择具体课程，系统会先生成**最小改动影响模拟**，确认后再进入审批流程。"}},
+            {"tag": "action", "actions": [{"tag": "button", "text": {"tag": "plain_text", "content": "打开请假调课"}, "type": "primary", "url": leave_url}]},
+        ],
     }
 
 

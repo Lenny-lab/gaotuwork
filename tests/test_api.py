@@ -44,7 +44,7 @@ class ApiIntegrationTests(unittest.TestCase):
             "/reschedule.html": ("reschedule", "调课中心", "simulate"),
             "/resources.html": ("resources", "资源概览", "resource-body"),
         }
-        expected_links = ('href="/"', 'href="/schedule.html"', 'href="/reschedule.html"', 'href="/resources.html"')
+        expected_links = ('href="/admin/dashboard"', 'href="/schedule.html"', 'href="/reschedule.html"', 'href="/resources.html"', 'href="/portal"')
         exclusive_ids = {item[2] for item in pages.values()}
         for path, (page_id, title, exclusive_id) in pages.items():
             status, content_type, body = self.get(path)
@@ -68,6 +68,10 @@ class ApiIntegrationTests(unittest.TestCase):
         self.assertIn("午休 12:00—13:30", html)
         self.assertIn('id="calendar"', html)
         self.assertNotIn('id="plans"', html)
+        _, _, script_body = self.get("/app.js")
+        _, _, css_body = self.get("/features.css")
+        self.assertIn('class="calendar-scroll"', script_body.decode("utf-8"))
+        self.assertIn(".calendar-scroll{overflow-x:auto", css_body.decode("utf-8"))
 
     def test_health_and_demo_endpoints(self):
         _, _, health_body = self.get("/api/health")

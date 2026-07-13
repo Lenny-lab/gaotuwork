@@ -156,11 +156,24 @@ def _on_message(event, problem_loader, feishu_host, app_id, app_secret):
     text = content.get("text", "").strip()
     mentioned = bool(message.get("mentions"))
 
+    # 根据飞书 Open ID 查询本地角色映射；未映射用户按教务处理，便于比赛演示。
+    from classmind.users import find_by_feishu_id
+    user = find_by_feishu_id(sender_id) if sender_id else None
+    role = user.role if user else "academic_affairs"
+
     # 简单关键词触发
-    triggers = ["排课", "课表", "排一下", "排个"]
+    triggers = ["排课", "课表", "排一下", "排个", "请假", "我的"]
     if not any(k in text for k in triggers):
         # 静默 ACK
         return {"code": 0, "msg": "ignored"}
+
+    if role == "teacher" and "请假" in text:
+        try:
+            token = _get_tenant_token(feishu_host, app_id, app_secret)
+            _send_card(chat_id, feishu_card.teacher_leave_card(user.name), feishu_host, token)
+        except Exception as exc:
+            print(f"[feishu_event] 发送请假卡片失败: {exc}")
+        return {"code": 0, "msg": "ok"}
 
     # 跑排课
     try:
@@ -184,11 +197,19 @@ def _on_message(event, problem_loader, feishu_host, app_id, app_secret):
     # 成功,出卡片
     try:
         token = _get_tenant_token(feishu_host, app_id, app_secret)
-        card = feishu_card.schedule_card(
-            title="ClassMind 排课结果",
-            result=result,
-            query=text,
-        )
+        if role == "student":
+            schedule = [item.to_dict() for item in result.schedule if item.class_id == user.class_id]
+            card = feishu_card.student_schedule_card(user.name, schedule, text)
+        elif role == "teacher":
+            schedule = [item.to_dict() for item in result.schedule if item.teacher_id == user.teacher_id]
+            card = feishu_card.teacher_schedule_card(user.name, schedule, text)
+        else:
+            card = feishu_card.schedule_card(
+                title="ClassMind 教务决策课表",
+                result=result,
+                query=text,
+                template="orange",
+            )
         _send_card(chat_id, card, feishu_host, token)
     except Exception as exc:
         print(f"[feishu_event] 发送卡片失败: {exc}")

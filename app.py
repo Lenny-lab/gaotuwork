@@ -20,16 +20,41 @@ import hashlib
 import json
 import mimetypes
 import os
+import re
+import secrets
 import time
+from datetime import timedelta
 from pathlib import Path
+from urllib.parse import urlparse
 
-from dotenv import load_dotenv, find_dotenv
-from flask import Flask, request, jsonify, render_template, send_from_directory
+try:
+    from dotenv import load_dotenv, find_dotenv
+except ImportError:  # 允许仅安装 Flask 的轻量测试环境启动
+    def find_dotenv():
+        return ""
+
+    def load_dotenv(*_args, **_kwargs):
+        return False
+from flask import Flask, g, request, jsonify, redirect, send_from_directory, session, url_for
+
+from auth.decorator import login_required, require_role
+from auth.feishu_oauth import (
+    build_authorize_url,
+    enrich_with_contact_profile,
+    exchange_code_for_token,
+    get_user_info,
+    lookup_open_id_by_mobile,
+)
+from auth.role import user_from_feishu
+from auth.session import current_user, login_user, logout_user
 
 # classmind 内部模块
 from classmind.io import load_problem, problem_from_dict
 from classmind.service import portfolio_payload, simulate_teacher_leave, teacher_load
 from classmind.solver import solve_schedule
+from classmind.student_api import student_exams, student_schedule
+from classmind.teacher_api import submit_leave, teacher_schedule, teacher_students, teacher_workload
+from classmind.users import bind_feishu_open_id, find_by_feishu_id, find_by_role, load_users
 
 # 飞书鉴权(原 feishuapi/python/auth.py)
 from feishuapi.python.auth import Auth
@@ -70,6 +95,16 @@ app = Flask(
     static_folder=str(WEB),
     static_url_path="/static",
 )
+app.secret_key = os.getenv("FLASK_SECRET_KEY") or os.getenv("SECRET_KEY") or "classmind-demo-change-me"
+app.config.update(
+    PERMANENT_SESSION_LIFETIME=timedelta(hours=12),
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    # 本地 HTTP 默认可登录；Render/生产环境显式设置 SESSION_COOKIE_SECURE=1。
+    SESSION_COOKIE_SECURE=os.getenv("SESSION_COOKIE_SECURE", "0") == "1",
+    # 线上必须关闭，避免用户绕过飞书账号映射自行切换角色。
+    DEMO_LOGIN_ENABLED=os.getenv("DEMO_LOGIN_ENABLED", "1") == "1",
+)
 # 让 feishuapi 自己的 public 资源也走 /public/*
 app.static_folder = str(WEB)  # 主静态目录为 web
 app.add_url_rule(
@@ -77,6 +112,25 @@ app.add_url_rule(
     endpoint="feishu_public",
     view_func=lambda filename: send_from_directory(FEISHU_WEB / "public", filename),
 )
+
+
+@app.before_request
+def load_request_user():
+    g.user = current_user()
+
+
+def _role_home(role: str) -> str:
+    return {
+        "student": "/student/dashboard",
+        "teacher": "/teacher/dashboard",
+        "academic_affairs": "/admin/dashboard",
+    }.get(role, "/login")
+
+
+def _safe_next(default: str) -> str:
+    candidate = request.args.get("next", "")
+    parsed = urlparse(candidate)
+    return candidate if candidate.startswith("/") and not parsed.netloc else default
 
 # ---------------------------------------------------------------------------
 # 全局异常处理
@@ -96,12 +150,145 @@ def handle_exception(ex):
 
 @app.route("/", methods=["GET"])
 def home():
+    # 飞书应用中心通常直接打开根 URL。根页必须始终展示三角色门户，不能
+    # 因为浏览器残留了教务 Session 就跳过学生端和教师端入口。
+    identity = request.args.get("login_identity", "")
+    mapped = find_by_feishu_id(identity) if identity else None
+    if mapped:
+        login_user(mapped)
+        return redirect(_role_home(mapped.role))
+    return send_from_directory(WEB, "login.html")
+
+
+@app.route("/portal", methods=["GET"])
+def role_portal():
+    return send_from_directory(WEB, "login.html")
+
+
+@app.route("/login", methods=["GET"])
+def login_page():
+    return send_from_directory(WEB, "login.html")
+
+
+@app.route("/favicon.ico", methods=["GET"])
+def favicon():
+    return "", 204
+
+
+@app.route("/auth/demo", methods=["GET"])
+def auth_demo():
+    if not app.config["DEMO_LOGIN_ENABLED"]:
+        return jsonify({"error": "线上环境已关闭演示角色切换，请使用飞书账号登录"}), 403
+    role = request.args.get("role", "")
+    users = find_by_role(role)
+    if not users:
+        return jsonify({"error": "无效演示角色"}), 400
+    payload = login_user(users[0])
+    return redirect(_safe_next(_role_home(payload["role"])))
+
+
+@app.route("/auth/logout", methods=["GET", "POST"])
+def auth_logout():
+    logout_user()
+    return redirect(url_for("home"))
+
+
+@app.route("/auth/feishu", methods=["GET"])
+def auth_feishu():
+    if not APP_ID or not APP_SECRET:
+        return redirect(url_for("login_page", oauth_error="飞书 OAuth 尚未配置，请先使用演示账号"))
+    state = secrets.token_urlsafe(24)
+    session["oauth_state"] = state
+    redirect_uri = url_for("auth_callback", _external=True, _scheme="https")
+    return redirect(build_authorize_url(APP_ID, redirect_uri, state))
+
+
+@app.route("/auth/callback", methods=["GET"])
+def auth_callback():
+    code = request.args.get("code", "")
+    state = request.args.get("state", "")
+    expected_state = session.pop("oauth_state", "")
+    if not code or not state or not secrets.compare_digest(state, expected_state):
+        return jsonify({"error": "飞书 OAuth 回调参数或 state 无效"}), 400
+    redirect_uri = url_for("auth_callback", _external=True, _scheme="https")
+    token_data = exchange_code_for_token(FEISHU_HOST, APP_ID, APP_SECRET, code, redirect_uri)
+    user_info = get_user_info(FEISHU_HOST, token_data["access_token"])
+    try:
+        user_info = enrich_with_contact_profile(FEISHU_HOST, APP_ID, APP_SECRET, user_info)
+    except Exception as exc:
+        # 通讯录权限未开时仍允许 OAuth 登录，并退回本地 Open ID 映射。
+        print(f"[auth] 通讯录资料读取失败，使用基础 OAuth 身份: {exc}")
+    resolved_user = user_from_feishu(user_info)
+    if resolved_user.role not in {"student", "teacher", "academic_affairs"}:
+        logout_user()
+        return redirect(url_for(
+            "home",
+            oauth_error=(
+                "该飞书账号尚未分配学生、授课教师或教务角色，请联系管理员配置 "
+                f"Open ID 映射：{resolved_user.feishu_open_id or '未返回 Open ID'}"
+            ),
+        ))
+    payload = login_user(resolved_user)
+    return redirect(_role_home(payload["role"]))
+
+
+@app.route("/student/dashboard", methods=["GET"])
+@require_role("student")
+def student_dashboard_page():
+    return send_from_directory(WEB / "student", "dashboard.html")
+
+
+@app.route("/student/schedule", methods=["GET"])
+@require_role("student")
+def student_schedule_page():
+    return send_from_directory(WEB / "student", "my-schedule.html")
+
+
+@app.route("/student/exams", methods=["GET"])
+@require_role("student")
+def student_exams_page():
+    return send_from_directory(WEB / "student", "exams.html")
+
+
+@app.route("/teacher/dashboard", methods=["GET"])
+@require_role("teacher")
+def teacher_dashboard_page():
+    return send_from_directory(WEB / "teacher", "dashboard.html")
+
+
+@app.route("/teacher/schedule", methods=["GET"])
+@require_role("teacher")
+def teacher_schedule_page():
+    return send_from_directory(WEB / "teacher", "my-schedule.html")
+
+
+@app.route("/teacher/leave", methods=["GET"])
+@require_role("teacher")
+def teacher_leave_page():
+    return send_from_directory(WEB / "teacher", "leave.html")
+
+
+@app.route("/admin/dashboard", methods=["GET"])
+@require_role("academic_affairs")
+def admin_dashboard_page():
     return send_from_directory(WEB, "index.html")
+
+
+@app.route("/admin/users", methods=["GET"])
+@require_role("academic_affairs")
+def admin_users_page():
+    return send_from_directory(WEB / "admin", "users.html")
 
 
 @app.route("/<path:filename>")
 def static_file(filename: str):
     """serve web/ 下的静态资源(html/css/js)。"""
+    admin_pages = {"index.html", "schedule.html", "reschedule.html", "resources.html", "bitable.html"}
+    if filename in admin_pages:
+        if not g.user:
+            return redirect(url_for("login_page", next=f"/{filename}"))
+        if g.user.get("role") != "academic_affairs":
+            return jsonify({"error": "权限不足", "role": g.user.get("role")}), 403
     try:
         return send_from_directory(WEB, filename)
     except Exception:
@@ -130,22 +317,26 @@ def api_health():
 
 
 @app.route("/api/plans", methods=["GET"])
+@require_role("academic_affairs")
 def api_plans():
     return jsonify(portfolio_payload(_problem()))
 
 
 @app.route("/api/dashboard", methods=["GET"])
+@require_role("academic_affairs")
 def api_dashboard():
     result = solve_schedule(_problem())
     return jsonify({**result.to_dict(), "teacher_load": teacher_load(result)})
 
 
 @app.route("/api/demo", methods=["GET"])
+@require_role("academic_affairs")
 def api_demo():
     return jsonify(json.loads((ROOT / "data" / "demo.json").read_text(encoding="utf-8")))
 
 
 @app.route("/api/solve", methods=["POST"])
+@require_role("academic_affairs")
 def api_solve():
     try:
         raw = request.get_json(force=True, silent=False)
@@ -160,6 +351,7 @@ def api_solve():
 
 
 @app.route("/api/reschedule", methods=["POST"])
+@require_role("academic_affairs")
 def api_reschedule():
     try:
         raw = request.get_json(force=True, silent=False)
@@ -168,6 +360,143 @@ def api_reschedule():
         return jsonify(simulate_teacher_leave(_problem(), teacher_id, slot_id))
     except (json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
         return jsonify({"error": f"无效调课数据: {exc}"}), 400
+
+
+@app.route("/api/me", methods=["GET"])
+@login_required
+def api_me():
+    return jsonify(g.user)
+
+
+@app.route("/api/session", methods=["GET"])
+def api_session():
+    """Portal-safe session probe; unauthenticated visitors receive HTTP 200."""
+    return jsonify({
+        "authenticated": bool(g.user),
+        "user": g.user,
+        "demo_login_enabled": bool(app.config["DEMO_LOGIN_ENABLED"]),
+    })
+
+
+@app.route("/api/student/<student_id>/schedule", methods=["GET"])
+@require_role("student")
+def api_student_schedule(student_id: str):
+    if student_id not in {g.user["id"], "me"}:
+        return jsonify({"error": "只能查看自己的课表"}), 403
+    return jsonify({"student": g.user, "schedule": student_schedule(_problem(), g.user["class_id"])})
+
+
+@app.route("/api/student/<student_id>/exams", methods=["GET"])
+@require_role("student")
+def api_student_exams(student_id: str):
+    if student_id not in {g.user["id"], "me"}:
+        return jsonify({"error": "只能查看自己的考试"}), 403
+    return jsonify({"student": g.user, "exams": student_exams(_problem(), g.user["class_id"])})
+
+
+@app.route("/api/teacher/<teacher_id>/schedule", methods=["GET"])
+@require_role("teacher")
+def api_teacher_schedule(teacher_id: str):
+    if teacher_id not in {g.user["teacher_id"], "me"}:
+        return jsonify({"error": "只能查看自己的课表"}), 403
+    return jsonify({"teacher": g.user, "schedule": teacher_schedule(_problem(), g.user["teacher_id"])})
+
+
+@app.route("/api/teacher/<teacher_id>/students", methods=["GET"])
+@require_role("teacher")
+def api_teacher_students(teacher_id: str):
+    if teacher_id not in {g.user["teacher_id"], "me"}:
+        return jsonify({"error": "只能查看自己的学生"}), 403
+    return jsonify({"teacher": g.user, "students": teacher_students(_problem(), g.user["teacher_id"])})
+
+
+@app.route("/api/teacher/<teacher_id>/workload", methods=["GET"])
+@require_role("teacher")
+def api_teacher_workload(teacher_id: str):
+    if teacher_id not in {g.user["teacher_id"], "me"}:
+        return jsonify({"error": "只能查看自己的工作量"}), 403
+    return jsonify(teacher_workload(_problem(), g.user["teacher_id"]))
+
+
+@app.route("/api/teacher/leave", methods=["POST"])
+@require_role("teacher")
+def api_teacher_leave():
+    raw = request.get_json(force=True, silent=True) or {}
+    try:
+        return jsonify(submit_leave(_problem(), g.user["teacher_id"], raw["slot_id"], raw.get("reason", "")))
+    except (KeyError, TypeError, ValueError) as exc:
+        return jsonify({"error": f"无效请假申请: {exc}"}), 400
+
+
+@app.route("/api/admin/users", methods=["GET"])
+@require_role("academic_affairs")
+def api_admin_users():
+    return jsonify({"users": [user.to_dict() for user in load_users()]})
+
+
+@app.route("/api/admin/statistics", methods=["GET"])
+@require_role("academic_affairs")
+def api_admin_statistics():
+    """Global operational statistics reserved for academic-affairs accounts."""
+    problem = _problem()
+    users = load_users()
+    result = solve_schedule(problem)
+    role_counts = {
+        role: sum(user.role == role for user in users)
+        for role in ("student", "teacher", "academic_affairs")
+    }
+    return jsonify({
+        "scope": "global",
+        "permission": "academic_affairs_only",
+        "users": {
+            "total": len(users),
+            "students": role_counts["student"],
+            "teachers": role_counts["teacher"],
+            "academic_affairs": role_counts["academic_affairs"],
+            "bound": sum(bool(user.feishu_open_id) for user in users),
+            "pending": sum(not user.feishu_open_id for user in users),
+        },
+        "resources": {
+            "teachers": len(problem.teachers),
+            "rooms": len(problem.rooms),
+            "classes": len(problem.classes),
+            "students": sum(item.size for item in problem.classes),
+            "courses": len(problem.courses),
+            "requested_lessons": sum(item.sessions for item in problem.courses),
+        },
+        "schedule": {
+            "status": result.status,
+            "scheduled_lessons": len(result.schedule),
+            "hard_conflicts": len(result.conflicts),
+        },
+    })
+
+
+@app.route("/api/admin/users/bind-by-mobile", methods=["POST"])
+@require_role("academic_affairs")
+def api_admin_bind_user_by_mobile():
+    raw = request.get_json(force=True, silent=True) or {}
+    mobile = re.sub(r"[\s-]", "", str(raw.get("mobile", "")))
+    user_id = str(raw.get("user_id", "")).strip()
+    if not re.fullmatch(r"\+?\d{8,15}", mobile):
+        return jsonify({"error": "请输入 8--15 位有效手机号；境外号码需包含国家/地区代码"}), 400
+    if not user_id:
+        return jsonify({"error": "请选择要绑定的 ClassMind 业务用户"}), 400
+    if not APP_ID or not APP_SECRET:
+        return jsonify({"error": "服务端尚未配置飞书 APP_ID / APP_SECRET"}), 503
+    try:
+        resolved = lookup_open_id_by_mobile(FEISHU_HOST, APP_ID, APP_SECRET, mobile)
+        user = bind_feishu_open_id(user_id, resolved["open_id"])
+        return jsonify({
+            "message": f"{user.name} 已绑定飞书账号",
+            "user": user.to_dict(),
+        })
+    except LookupError as exc:
+        return jsonify({"error": str(exc)}), 404
+    except (KeyError, ValueError) as exc:
+        return jsonify({"error": str(exc)}), 400
+    except Exception as exc:
+        return jsonify({"error": f"飞书用户查询失败: {exc}"}), 502
 
 
 # ---------------------------------------------------------------------------
@@ -186,6 +515,7 @@ def _get_auth() -> Auth:
 
 
 @app.route("/feishu/jssdk_config", methods=["GET"])
+@login_required
 def jssdk_config():
     """前端(feishuapi 的 index.html)调这个拿鉴权参数。"""
     url = request.args.get("url", "")

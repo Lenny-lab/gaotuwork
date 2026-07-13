@@ -5,7 +5,8 @@ services:
     plan: free
     branch: main
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn -w 2 -k gthread -b 0.0.0.0:$PORT app:app --timeout 120
+    # 用户映射采用原子 JSON 写入；单 worker 避免两个进程同时覆盖绑定结果。
+    startCommand: gunicorn -w 1 -k gthread --threads 4 -b 0.0.0.0:$PORT app:app --timeout 120
     healthCheckPath: /healthz
     autoDeploy: true
     envVars:
@@ -17,6 +18,14 @@ services:
         sync: false
       - key: FEISHU_HOST
         value: https://open.feishu.cn
+      - key: PUBLIC_BASE_URL
+        value: https://classmind-feishu.onrender.com
+      - key: FLASK_SECRET_KEY
+        generateValue: true
+      - key: SESSION_COOKIE_SECURE
+        value: "1"
+      - key: DEMO_LOGIN_ENABLED
+        value: "0"
       - key: FEISHU_ENCRYPT_KEY
         sync: false
       - key: FEISHU_VERIFICATION_TOKEN

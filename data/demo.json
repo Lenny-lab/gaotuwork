@@ -22,7 +22,7 @@
     {"id":"FRI_1530","day":"周五","period":"15:30-17:00","order":20}
   ],
   "teachers": [
-    {"id":"T01","name":"张老师","qualifications":["数学"],"unavailable":["WED_1000"],"preferred_slots":["MON_0800","TUE_0800","THU_1000"]},
+    {"id":"T01","name":"张锦倪","qualifications":["数学"],"unavailable":["WED_1000"],"preferred_slots":["MON_0800","TUE_0800","THU_1000"]},
     {"id":"T02","name":"李老师","qualifications":["数学","物理"],"unavailable":["TUE_1000"],"preferred_slots":["MON_1330","WED_1330","FRI_0800"]},
     {"id":"T03","name":"王老师","qualifications":["英语"],"unavailable":["FRI_1530"],"preferred_slots":["TUE_1000","THU_1330","FRI_1000"]},
     {"id":"T04","name":"赵老师","qualifications":["物理"],"unavailable":["MON_0800"],"preferred_slots":["MON_1330","WED_1330","FRI_0800"]}

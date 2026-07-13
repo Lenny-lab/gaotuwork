@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>三角色门户 · ClassMind</title>
+  <link rel="stylesheet" href="/static/role.css">
+  <style>
+    body{min-height:100vh;background:radial-gradient(circle at 10% 0,#dbe7ff 0,transparent 38%),radial-gradient(circle at 92% 8%,#dcfce7 0,transparent 28%),#f7f8fb}
+    .portal{max-width:1120px;margin:auto;padding:48px 24px 72px}
+    .portal-head{text-align:center;margin-bottom:28px}.portal-head h1{font-size:42px;margin:10px}.portal-head p{color:#667085;line-height:1.8}
+    .session{display:none;align-items:center;justify-content:space-between;gap:18px;max-width:760px;margin:0 auto 24px;padding:15px 18px;background:#fff;border:1px solid #d0d5dd;border-radius:14px;box-shadow:0 10px 30px #1018280b}
+    .session.show{display:flex}.session strong{display:block}.session span{color:#667085;font-size:13px}.session a{padding:10px 16px;border-radius:10px;background:#101828;color:#fff;font-weight:750;white-space:nowrap}
+    .oauth{display:flex;justify-content:center;margin-bottom:30px}.oauth a{background:#3370ff;color:#fff;padding:14px 26px;border-radius:12px;font-weight:750;box-shadow:0 10px 24px #3370ff33}
+    .roles{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}.role{background:#fff;border:1px solid #e4e7ec;border-radius:20px;padding:28px;transition:.2s;display:flex;flex-direction:column}.role:hover{transform:translateY(-4px);box-shadow:0 18px 45px #18223018}.role .icon{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;font-size:25px;margin-bottom:18px}.role b{font-size:22px}.role p{color:#667085;line-height:1.7;min-height:58px}.role ul{padding-left:18px;color:#475467;line-height:1.9;font-size:14px;flex:1}.role a{display:none;text-align:center;padding:12px;border-radius:10px;font-weight:750;margin-top:16px}.demo-enabled .role a{display:block}.role.student{border-top:4px solid #3370ff}.role.student .icon,.role.student a{background:#edf3ff;color:#245bdb}.role.teacher{border-top:4px solid #12a150}.role.teacher .icon,.role.teacher a{background:#e7f8ee;color:#08783a}.role.admin{border-top:4px solid #f79009}.role.admin .icon,.role.admin a{background:#fff3e0;color:#b54708}
+    .strict-note{display:none;margin:22px auto 0;max-width:850px;padding:14px 18px;text-align:center;background:#ecfdf3;color:#067647;border:1px solid #abefc6;border-radius:12px;font-size:14px}.demo-disabled .strict-note{display:block}.note{margin:26px auto 0;max-width:850px;text-align:center;color:#667085;font-size:13px;line-height:1.7}.error{max-width:720px;margin:0 auto 22px;background:#fff4ed;color:#b93815;padding:12px 16px;border-radius:10px;display:none}
+    @media(max-width:760px){.portal{padding-top:30px}.roles{grid-template-columns:1fr}.role p{min-height:0}.portal-head h1{font-size:32px}.session{align-items:flex-start;flex-direction:column}}
+  </style>
+</head>
+<body>
+  <main class="portal">
+    <div class="portal-head">
+      <div class="eyebrow">Feishu · ClassMind role portal</div>
+      <h1>请选择你的 ClassMind 工作台</h1>
+      <p>学生看自己的课程与测评，授课教师管理教学与请假，教务负责全局排课决策。<br>三种身份拥有不同页面、数据范围和操作权限。</p>
+    </div>
+    <div id="error" class="error"></div>
+    <section id="session" class="session">
+      <div><strong id="session-name">当前已登录</strong><span id="session-role"></span></div>
+      <a id="session-home" href="#">进入当前身份工作台</a>
+    </section>
+    <div class="oauth"><a href="/auth/feishu">使用真实飞书身份自动进入</a></div>
+    <section class="roles">
+      <article class="role student">
+        <div class="icon">🎓</div><b>学生端</b><p>只呈现与本人学习相关的信息。</p>
+        <ul><li>个人课表与上课地点</li><li>阶段测评安排</li><li>本人班级的数据隔离</li></ul>
+        <a href="/auth/demo?role=student">体验学生工作台</a>
+      </article>
+      <article class="role teacher">
+        <div class="icon">👩‍🏫</div><b>授课教师端</b><p>围绕教师本人的教学任务组织功能。</p>
+        <ul><li>我的授课安排</li><li>负责班级与学生范围</li><li>请假与最小影响调课模拟</li></ul>
+        <a href="/auth/demo?role=teacher">体验教师工作台</a>
+      </article>
+      <article class="role admin">
+        <div class="icon">🗂️</div><b>教务端</b><p>保留完整的全局排课与资源决策能力。</p>
+        <ul><li>排课决策驾驶舱</li><li>调课、资源与多维表格</li><li>用户角色与权限管理</li></ul>
+        <a href="/auth/demo?role=academic_affairs">体验教务工作台</a>
+      </article>
+    </section>
+    <p class="strict-note">线上已启用严格账号分流：不能手动选择角色。请点击上方飞书登录，系统将按当前飞书账号自动进入唯一对应的工作台。</p>
+    <p class="note">本地比赛演示环境可显示角色体验按钮；正式环境只允许真实飞书 OAuth，未分配角色的账号不会默认获得教务权限。</p>
+  </main>
+  <script>
+    const params=new URLSearchParams(location.search),error=params.get('oauth_error');
+    if(error){const box=document.querySelector('#error');box.textContent=error;box.style.display='block'}
+    fetch('/api/session').then(response=>response.json()).then(payload=>{
+      document.documentElement.classList.add(payload.demo_login_enabled?'demo-enabled':'demo-disabled');
+      const user=payload.user;if(!payload.authenticated||!user)return;
+      const labels={student:'学生',teacher:'授课教师',academic_affairs:'教务'};
+      const homes={student:'/student/dashboard',teacher:'/teacher/dashboard',academic_affairs:'/admin/dashboard'};
+      document.querySelector('#session-name').textContent=`${user.name}，欢迎回来`;
+      document.querySelector('#session-role').textContent=`当前身份：${labels[user.role]||user.role}`;
+      document.querySelector('#session-home').href=homes[user.role]||'/';
+      document.querySelector('#session').classList.add('show');
+    }).catch(()=>{});
+  </script>
+</body>
+</html>
