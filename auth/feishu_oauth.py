@@ -8,6 +8,30 @@ import requests
 AUTHORIZE_URL = "https://accounts.feishu.cn/open-apis/authen/v1/authorize"
 
 
+class FeishuAPIError(RuntimeError):
+    """A diagnostics-safe Feishu failure that never stores request payloads."""
+
+    def __init__(self, operation: str, http_status: int, code: object = None, request_id: str = ""):
+        self.operation = operation
+        self.http_status = int(http_status or 0)
+        self.code = code if code not in (None, "") else "unknown"
+        self.request_id = str(request_id or "")[:128]
+        super().__init__(f"{operation} failed (HTTP {self.http_status}, code {self.code})")
+
+
+def _checked_payload(response: requests.Response, operation: str) -> dict:
+    """Parse a Feishu response and raise only payload-free diagnostic fields."""
+    try:
+        payload = response.json()
+    except ValueError:
+        payload = {}
+    code = payload.get("code") if isinstance(payload, dict) else None
+    if response.ok and code in (None, 0):
+        return payload
+    request_id = response.headers.get("X-Request-Id") or response.headers.get("X-Tt-Logid") or ""
+    raise FeishuAPIError(operation, response.status_code, code, request_id)
+
+
 def build_authorize_url(app_id: str, redirect_uri: str, state: str) -> str:
     return f"{AUTHORIZE_URL}?{urlencode({'app_id': app_id, 'redirect_uri': redirect_uri, 'state': state})}"
 
@@ -51,10 +75,7 @@ def _tenant_access_token(host: str, app_id: str, app_secret: str) -> str:
         json={"app_id": app_id, "app_secret": app_secret},
         timeout=8,
     )
-    response.raise_for_status()
-    payload = response.json()
-    if payload.get("code") != 0:
-        raise RuntimeError(payload.get("msg") or "获取 tenant_access_token 失败")
+    payload = _checked_payload(response, "tenant_access_token")
     return payload["tenant_access_token"]
 
 
@@ -71,10 +92,7 @@ def lookup_open_id_by_mobile(host: str, app_id: str, app_secret: str, mobile: st
         json={"mobiles": [mobile], "include_resigned": False},
         timeout=8,
     )
-    response.raise_for_status()
-    payload = response.json()
-    if payload.get("code") != 0:
-        raise RuntimeError(payload.get("msg") or "通过手机号查询飞书用户失败")
+    payload = _checked_payload(response, "contact.batch_get_id")
     data = payload.get("data", {}) or {}
     users = data.get("user_list") or data.get("items") or []
     if not users:

@@ -1,94 +1,89 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>ClassMind 排课表 · 飞书多维表格</title>
+  <title>飞书多维表格 · ClassMind</title>
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="/features.css">
   <style>
-    body { margin: 0; padding: 0; height: 100vh; overflow: hidden; }
-    .bitable-frame {
-      width: 100vw;
-      height: calc(100vh - 56px);  /* 减去顶部 nav 高度 */
-      border: 0;
-      display: block;
+    body[data-page="bitable"]{height:100vh;overflow:hidden}
+    .bitable-main{height:100vh;max-width:none;display:flex;flex-direction:column;padding-bottom:24px}
+    .bitable-header{flex:0 0 auto;margin-bottom:18px}
+    .bitable-actions{display:flex;align-items:center;gap:10px}
+    .bitable-actions a{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:10px 15px;border:1px solid var(--line);border-radius:11px;background:rgba(255,255,255,.94);color:var(--muted);font-size:13px;font-weight:700;box-shadow:var(--shadow)}
+    .bitable-actions a:hover{color:var(--orange);border-color:rgba(247,144,9,.35);transform:translateY(-1px)}
+    .bitable-actions .open-external{color:#fff;border-color:transparent;background:var(--orange);box-shadow:0 8px 20px rgba(247,144,9,.2)}
+    .bitable-panel{flex:1;min-height:0;padding:0;overflow:hidden;display:flex;flex-direction:column}
+    .bitable-toolbar{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:15px 18px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.96)}
+    .bitable-toolbar strong{font-size:14px}.bitable-toolbar span{color:var(--muted);font-size:12px}
+    .bitable-state{display:inline-flex;align-items:center;gap:8px;color:#067647!important}
+    .bitable-state::before{content:"";width:8px;height:8px;border-radius:50%;background:#12a150;box-shadow:0 0 0 4px rgba(18,161,80,.12)}
+    .bitable-frame{width:100%;height:100%;min-height:320px;border:0;display:block;background:#fff}
+    .fallback{max-width:520px;margin:70px auto;padding:24px;text-align:center;color:var(--muted)}
+    .fallback a{color:var(--orange);font-weight:700}
+    @media(max-width:1000px){.bitable-main{height:100vh;padding-bottom:18px}}
+    @media(max-width:700px){
+      .bitable-main{padding:22px 14px 14px}
+      .bitable-header{align-items:flex-start;gap:14px}
+      .bitable-actions{width:100%;overflow-x:auto;padding-bottom:3px}
+      .bitable-actions a{flex:0 0 auto}
+      .bitable-toolbar{align-items:flex-start;flex-direction:column}
     }
-    .nav-bar {
-      height: 56px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 24px;
-      background: linear-gradient(135deg, #1f4eff 0%, #5b8def 100%);
-      color: #fff;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    }
-    .nav-bar h1 {
-      margin: 0;
-      font-size: 1.1rem;
-      font-weight: 600;
-      letter-spacing: 0.02em;
-    }
-    .nav-bar a {
-      color: #fff;
-      text-decoration: none;
-      font-size: 0.9rem;
-      opacity: 0.92;
-      margin-left: 18px;
-    }
-    .nav-bar a:hover { opacity: 1; }
-    .fallback {
-      max-width: 480px;
-      margin: 80px auto;
-      padding: 24px;
-      text-align: center;
-      color: #555;
-    }
-    .fallback a {
-      color: #1f4eff;
-      text-decoration: none;
-      font-weight: 500;
-    }
-    .fallback a:hover { text-decoration: underline; }
   </style>
 </head>
 <body data-page="bitable">
-  <div class="nav-bar">
-    <h1>📊 ClassMind 排课表 · 飞书多维表格</h1>
-    <div>
-      <a href="/">← 返回驾驶舱</a>
+  <aside>
+    <div class="brand"><span>高</span><div><b>高途 ClassMind</b><small>让排课决策更美好</small></div></div>
+    <nav>
+      <a href="/admin/dashboard">决策驾驶舱</a>
+      <a href="/schedule.html">智能排课</a>
+      <a href="/reschedule.html">调课中心</a>
+      <a href="/resources.html">资源概览</a>
+      <a class="active" href="/bitable.html">飞书多维表格</a>
       <a href="/admin/users">用户管理</a>
+      <a href="/portal">三角色门户</a>
       <a href="/auth/logout">退出登录</a>
-      <a id="open-external" href="#" target="_blank" rel="noopener">↗ 在飞书打开</a>
-    </div>
-  </div>
-  <!--
-    iframe src 由部署后端写入
-    默认 PLACEHOLDER_URL,实际使用前在飞书后台把
-    BASE_TOKEN 和 TABLE_ID 替换进来
-  -->
-  <iframe
-    id="bitable-frame"
-    class="bitable-frame"
-    src="https://ccniq85tn9jr.feishu.cn/wiki/GomLwYG7Di2qqPk9XzzcSCsznHg?table=tbl1y18Sjsf74wuA&view=vewrSslpC6"
-    allow="fullscreen; clipboard-read; clipboard-write"
-    referrerpolicy="no-referrer"
-  ></iframe>
-
-  <noscript>
-    <div class="fallback">
-      <p>需要 JavaScript 才能加载飞书多维表格。</p>
-      <a href="#" id="open-external-noscript">在飞书中直接打开 →</a>
-    </div>
-  </noscript>
-
+    </nav>
+    <div class="solver"><i></i><div><b>飞书数据已连接</b><small>教务专属数据空间</small></div></div>
+  </aside>
+  <main class="bitable-main">
+    <header class="bitable-header">
+      <div>
+        <p>FEISHU BITABLE · ACADEMIC AFFAIRS</p>
+        <h1>飞书多维表格</h1>
+        <span class="page-subtitle">在统一的教务工作台中查看课程、资源与排课协作数据。</span>
+      </div>
+      <div class="bitable-actions">
+        <a href="/admin/users">用户管理</a>
+        <a id="open-external" class="open-external" href="#" target="_blank" rel="noopener">在飞书中打开 ↗</a>
+      </div>
+    </header>
+    <section class="panel bitable-panel">
+      <div class="bitable-toolbar">
+        <div><strong>ClassMind 排课数据空间</strong><br><span>内嵌内容由飞书多维表格提供</span></div>
+        <span class="bitable-state">连接正常</span>
+      </div>
+      <iframe
+        id="bitable-frame"
+        class="bitable-frame"
+        src="https://ccniq85tn9jr.feishu.cn/wiki/GomLwYG7Di2qqPk9XzzcSCsznHg?table=tbl1y18Sjsf74wuA&amp;view=vewrSslpC6"
+        title="ClassMind 飞书多维表格"
+        allow="fullscreen; clipboard-read; clipboard-write"
+        referrerpolicy="no-referrer"
+      ></iframe>
+      <noscript>
+        <div class="fallback"><p>需要 JavaScript 才能加载飞书多维表格。</p><a href="#">在飞书中直接打开 →</a></div>
+      </noscript>
+    </section>
+  </main>
   <script>
-    // 把锚链接同步指向 iframe src,这样右上角"在飞书打开"永远有效
-    (function () {
-      var frame = document.getElementById('bitable-frame');
-      var ext = document.getElementById('open-external');
-      if (frame && ext) ext.href = frame.src;
+    (function(){
+      var frame=document.getElementById('bitable-frame');
+      var external=document.getElementById('open-external');
+      var fallback=document.querySelector('.fallback a');
+      if(frame&&external)external.href=frame.src;
+      if(frame&&fallback)fallback.href=frame.src;
     })();
   </script>
 </body>

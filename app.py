@@ -40,6 +40,7 @@ from flask import Flask, g, request, jsonify, redirect, send_from_directory, ses
 
 from auth.decorator import login_required, require_role
 from auth.feishu_oauth import (
+    FeishuAPIError,
     build_authorize_url,
     enrich_with_contact_profile,
     exchange_code_for_token,
@@ -280,6 +281,16 @@ def auth_callback():
                 if mobile_user:
                     resolved_user = mobile_user
                     mobile_mapping_state = "matched"
+        except FeishuAPIError as exc:
+            mobile_mapping_state = "lookup_failed"
+            # Safe diagnostics: status/code/request-id only. Never log the
+            # configured mobile, request body, bearer token or response text.
+            request_id = exc.request_id or "none"
+            print(
+                "[auth] 注册手机号自动识别失败: "
+                f"operation={exc.operation} http={exc.http_status} "
+                f"code={exc.code} request_id={request_id}"
+            )
         except Exception as exc:
             mobile_mapping_state = "lookup_failed"
             # Upstream exception messages can echo request data.  Log only the

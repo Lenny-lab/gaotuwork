@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 import app as app_module
 from app import app
+from auth.feishu_oauth import FeishuAPIError
 from classmind.users import User, _mobile_fingerprint, find_by_id, find_by_mobile
 
 
@@ -124,6 +125,21 @@ class RegisteredMobileOAuthTests(unittest.TestCase):
         client, response, captured_log = self._oauth_login("ou_unknown_member", lookup=failing_lookup)
         self.assertEqual(302, response.status_code)
         self.assertFalse(client.get("/api/session").get_json()["authenticated"])
+        self.assertFalse(self._contains_registered_mobile(captured_log), "authentication log leaked a registered mobile")
+
+    def test_feishu_http_failure_logs_only_safe_diagnostic_fields(self):
+        error = FeishuAPIError(
+            "contact.batch_get_id",
+            400,
+            41050,
+            "safe-request-id",
+        )
+        client, response, captured_log = self._oauth_login("ou_unknown_member", lookup=error)
+        self.assertEqual(302, response.status_code)
+        self.assertFalse(client.get("/api/session").get_json()["authenticated"])
+        self.assertIn("http=400", captured_log)
+        self.assertIn("code=41050", captured_log)
+        self.assertIn("request_id=safe-request-id", captured_log)
         self.assertFalse(self._contains_registered_mobile(captured_log), "authentication log leaked a registered mobile")
 
 
