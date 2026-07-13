@@ -103,7 +103,8 @@ app.config.update(
     # 本地 HTTP 默认可登录；Render/生产环境显式设置 SESSION_COOKIE_SECURE=1。
     SESSION_COOKIE_SECURE=os.getenv("SESSION_COOKIE_SECURE", "0") == "1",
     # 线上必须关闭，避免用户绕过飞书账号映射自行切换角色。
-    DEMO_LOGIN_ENABLED=os.getenv("DEMO_LOGIN_ENABLED", "1") == "1",
+    # 安全默认值为关闭；只有本地显式设置为 1 才允许手动体验角色。
+    DEMO_LOGIN_ENABLED=os.getenv("DEMO_LOGIN_ENABLED", "0") == "1",
 )
 # 让 feishuapi 自己的 public 资源也走 /public/*
 app.static_folder = str(WEB)  # 主静态目录为 web
