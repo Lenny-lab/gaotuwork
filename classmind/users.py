@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import hashlib
+import hmac
 import os
 import re
 import threading
@@ -23,6 +25,7 @@ class User:
     role: str
     avatar: str = ""
     mobile: str = ""
+    mobile_fingerprint: str = ""
     class_id: str = ""
     teacher_id: str = ""
     subjects: tuple[str, ...] = ()
@@ -54,7 +57,7 @@ class User:
 
 
 def _user_from_dict(raw: dict) -> User:
-    known = {"id", "feishu_open_id", "name", "role", "avatar", "mobile", "class_id", "teacher_id", "subjects", "permissions"}
+    known = {"id", "feishu_open_id", "name", "role", "avatar", "mobile", "mobile_fingerprint", "class_id", "teacher_id", "subjects", "permissions"}
     role = raw.get("role", "")
     if role not in VALID_ROLES:
         raise ValueError(f"无效用户角色: {role}")
@@ -65,6 +68,7 @@ def _user_from_dict(raw: dict) -> User:
         role=role,
         avatar=raw.get("avatar", ""),
         mobile=_normalize_mobile(raw.get("mobile", "")),
+        mobile_fingerprint=str(raw.get("mobile_fingerprint", "")),
         class_id=raw.get("class_id", ""),
         teacher_id=raw.get("teacher_id", ""),
         subjects=tuple(raw.get("subjects", [])),
@@ -92,11 +96,28 @@ def _normalize_mobile(mobile: str) -> str:
     return digits
 
 
+def _mobile_fingerprint(mobile: str) -> str:
+    """Return a repository-safe fingerprint for matching a returned mobile."""
+    normalized = _normalize_mobile(mobile)
+    if not normalized:
+        return ""
+    return hashlib.sha256(f"classmind-mobile-v1:{normalized}".encode("utf-8")).hexdigest()
+
+
 def find_by_mobile(mobile: str) -> User | None:
     normalized = _normalize_mobile(mobile)
     if not normalized:
         return None
-    return next((user for user in load_users() if user.mobile and user.mobile == normalized), None)
+    fingerprint = _mobile_fingerprint(normalized)
+    return next(
+        (
+            user
+            for user in load_users()
+            if (user.mobile and user.mobile == normalized)
+            or (user.mobile_fingerprint and hmac.compare_digest(user.mobile_fingerprint, fingerprint))
+        ),
+        None,
+    )
 
 
 def find_by_role(role: str) -> list[User]:

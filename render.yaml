@@ -26,6 +26,9 @@ services:
         value: "1"
       - key: DEMO_LOGIN_ENABLED
         value: "0"
+      # Secret JSON: {"U_S001":"...","U_T001":"..."}; never commit real mobiles.
+      - key: FEISHU_MOBILE_BINDINGS
+        sync: false
       - key: FEISHU_ENCRYPT_KEY
         sync: false
       - key: FEISHU_VERIFICATION_TOKEN

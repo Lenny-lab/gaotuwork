@@ -23,6 +23,7 @@ import os
 import re
 import secrets
 import time
+from dataclasses import replace
 from datetime import timedelta
 from pathlib import Path
 from urllib.parse import urlparse
@@ -54,7 +55,7 @@ from classmind.service import portfolio_payload, simulate_teacher_leave, teacher
 from classmind.solver import solve_schedule
 from classmind.student_api import student_exams, student_schedule
 from classmind.teacher_api import submit_leave, teacher_schedule, teacher_students, teacher_workload
-from classmind.users import bind_feishu_open_id, find_by_feishu_id, find_by_role, load_users
+from classmind.users import bind_feishu_open_id, find_by_feishu_id, find_by_id, find_by_role, load_users
 
 # 飞书鉴权(原 feishuapi/python/auth.py)
 from feishuapi.python.auth import Auth
@@ -132,6 +133,55 @@ def _safe_next(default: str) -> str:
     candidate = request.args.get("next", "")
     parsed = urlparse(candidate)
     return candidate if candidate.startswith("/") and not parsed.netloc else default
+
+
+def _configured_mobile_bindings() -> dict[str, str]:
+    """Read private business-user-to-mobile bindings from a server secret.
+
+    The value is a JSON object, for example ``{"U_S001":"..."}``.  Mobile
+    numbers intentionally stay out of the repository, API responses and logs.
+    """
+    raw = os.getenv("FEISHU_MOBILE_BINDINGS", "").strip()
+    if not raw:
+        return {}
+    try:
+        payload = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise ValueError("FEISHU_MOBILE_BINDINGS 必须是 JSON 对象") from exc
+    if not isinstance(payload, dict):
+        raise ValueError("FEISHU_MOBILE_BINDINGS 必须是业务用户 ID 到手机号的 JSON 对象")
+
+    bindings: dict[str, str] = {}
+    for raw_user_id, raw_mobile in payload.items():
+        user_id = str(raw_user_id).strip()
+        mobile = re.sub(r"[\s-]", "", str(raw_mobile))
+        if not find_by_id(user_id):
+            raise ValueError(f"手机号映射引用了不存在的业务用户: {user_id}")
+        if not re.fullmatch(r"\+?\d{8,15}", mobile):
+            raise ValueError(f"业务用户 {user_id} 的手机号格式无效")
+        bindings[user_id] = mobile
+    return bindings
+
+
+def _resolve_registered_mobile_user(open_id: str):
+    """Match the OAuth identity against configured mobiles via Feishu OpenAPI.
+
+    ``contact.user.id:readonly`` supports phone -> Open ID, not Open ID ->
+    phone.  For an unmapped OAuth identity we therefore resolve each small,
+    private bootstrap record and compare its Open ID with the login identity.
+    """
+    if not open_id or not APP_ID or not APP_SECRET:
+        return None
+    for user_id, mobile in _configured_mobile_bindings().items():
+        try:
+            resolved = lookup_open_id_by_mobile(FEISHU_HOST, APP_ID, APP_SECRET, mobile)
+        except LookupError:
+            continue
+        resolved_open_id = str(resolved.get("open_id", ""))
+        if resolved_open_id and secrets.compare_digest(resolved_open_id, open_id):
+            user = find_by_id(user_id)
+            return replace(user, feishu_open_id=open_id) if user else None
+    return None
 
 # ---------------------------------------------------------------------------
 # 全局异常处理
@@ -220,13 +270,32 @@ def auth_callback():
         # 通讯录权限未开时仍允许 OAuth 登录，并退回本地 Open ID 映射。
         print(f"[auth] 通讯录资料读取失败，使用基础 OAuth 身份: {exc}")
     resolved_user = user_from_feishu(user_info)
+    mobile_mapping_state = "not_needed"
+    if resolved_user.role not in {"student", "teacher", "academic_affairs"}:
+        try:
+            bindings_configured = bool(_configured_mobile_bindings())
+            mobile_mapping_state = "no_server_bindings" if not bindings_configured else "no_match"
+            if bindings_configured:
+                mobile_user = _resolve_registered_mobile_user(resolved_user.feishu_open_id)
+                if mobile_user:
+                    resolved_user = mobile_user
+                    mobile_mapping_state = "matched"
+        except Exception as exc:
+            mobile_mapping_state = "lookup_failed"
+            # Upstream exception messages can echo request data.  Log only the
+            # exception class so a registered mobile never reaches logs.
+            print(f"[auth] 注册手机号自动识别失败: {type(exc).__name__}")
     if resolved_user.role not in {"student", "teacher", "academic_affairs"}:
         logout_user()
+        reason = {
+            "no_server_bindings": "服务端尚未配置注册手机号映射",
+            "no_match": "已自动核验登记手机号，但当前飞书账号未匹配",
+            "lookup_failed": "注册手机号自动核验暂时失败，请管理员检查飞书接口权限和服务端配置",
+        }.get(mobile_mapping_state, "该飞书账号尚未分配角色")
         return redirect(url_for(
             "home",
             oauth_error=(
-                "该飞书账号尚未分配学生、授课教师或教务角色，请联系管理员配置 "
-                f"Open ID 映射：{resolved_user.feishu_open_id or '未返回 Open ID'}"
+                f"{reason}。系统不会允许手动选择角色；请使用已登记手机号对应的飞书账号重试。"
             ),
         ))
     payload = login_user(resolved_user)
